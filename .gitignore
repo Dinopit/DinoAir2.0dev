@@ -128,13 +128,29 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# User data databases (these are user-specific and should not be in version control)
-src/user_data/*/databases/*.db
-src/user_data/*/databases/*.db-shm
-src/user_data/*/databases/*.db-wal
+# All databases (these are user-specific and should not be in version control)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
-# Timer database (user-specific)
-timers.db
+# User data directory (contains user-specific data)
+src/user_data/
+
+# Images (these should not be in version control)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.ico
+*.webp
+
+# Mermaid diagrams
+*.mmd
+*.mermaid
 
 # IDE settings
 .vscode/
@@ -154,4 +170,9 @@ Thumbs.db
 *.bak
 *.backup
 
-src/user_data/default_user/databases/file_search.db
+# Log files
+logs/
+*.log
+
+# Config files that may contain sensitive data
+config/window_state.json
