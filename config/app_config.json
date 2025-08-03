@@ -1,0 +1,87 @@
+{
+    "app": {
+        "name": "DinoAir 2.0",
+        "version": "2.0.0",
+        "description": "Modular note-taking application with AI capabilities",
+        "theme": "light",
+        "auto_save": true,
+        "backup_interval": 300,
+        "startup_page": "notes"
+    },
+    "database": {
+        "backup_on_startup": true,
+        "cleanup_interval": 3600,
+        "max_backup_files": 10,
+        "connection_timeout": 30,
+        "retry_attempts": 3
+    },
+    "ai": {
+        "default_model": "gpt-3.5-turbo",
+        "max_tokens": 2000,
+        "temperature": 0.7,
+        "timeout": 30,
+        "enabled": true
+    },
+    "ui": {
+        "window_width": 1200,
+        "window_height": 800,
+        "font_size": 12,
+        "font_family": "Segoe UI",
+        "show_sidebar": true,
+        "sidebar_width": 200,
+        "show_status_bar": true
+    },
+    "input_processing": {
+        "enable_profanity_filter": true,
+        "enable_pattern_detection": true,
+        "enable_auto_translation": false,
+        "default_language": "en"
+    },
+    "logging": {
+        "level": "INFO",
+        "max_file_size": "10MB",
+        "backup_count": 5,
+        "log_to_file": true,
+        "log_to_console": true
+    },
+    "notes": {
+        "auto_save": {
+            "enabled": true,
+            "interval_seconds": 2,
+            "conflict_check_interval_seconds": 5,
+            "show_save_status": true,
+            "save_on_blur": true,
+            "min_content_length": 1,
+            "require_title_for_new_notes": true
+        },
+        "editor": {
+            "default_font_size": 14,
+            "spell_check": true,
+            "word_wrap": true,
+            "show_line_numbers": false,
+            "show_word_count": true
+        },
+        "search": {
+            "case_sensitive": false,
+            "highlight_matches": true,
+            "max_results": 100
+        }
+    },
+    "watchdog": {
+        "enabled": true,
+        "vram_threshold_percent": 80.0,
+        "max_dinoair_processes": 5,
+        "check_interval_seconds": 10,
+        "self_terminate_on_critical": false,
+        "store_metrics": true,
+        "metrics_retention_days": 7,
+        "metrics_buffer_size": 10
+    },
+    "scaling": {
+        "enable_high_dpi": true,
+        "user_zoom_level": 1.0,
+        "minimum_font_size": 10,
+        "maximum_font_size": 24,
+        "remember_window_state": true
+    }
+}

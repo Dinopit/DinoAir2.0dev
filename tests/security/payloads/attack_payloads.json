@@ -1,0 +1,310 @@
+{
+  "path_traversal": {
+    "description": "Path traversal attack vectors",
+    "payloads": [
+      {
+        "vector": "../etc/passwd",
+        "description": "Basic Unix path traversal",
+        "os": ["unix", "linux"],
+        "severity": "high"
+      },
+      {
+        "vector": "..\\Windows\\System32\\drivers\\etc\\hosts",
+        "description": "Windows path traversal",
+        "os": ["windows"],
+        "severity": "high"
+      },
+      {
+        "vector": "../../../../../../../../etc/shadow",
+        "description": "Deep directory traversal",
+        "os": ["unix", "linux"],
+        "severity": "critical"
+      },
+      {
+        "vector": "%252e%252e%252fetc%252fpasswd",
+        "description": "Double URL encoded traversal",
+        "os": ["all"],
+        "severity": "high"
+      },
+      {
+        "vector": "%252e%252e%255cwindows%255csystem32",
+        "description": "Double encoded Windows path",
+        "os": ["windows"],
+        "severity": "high"
+      },
+      {
+        "vector": "..%c0%af..%c0%afetc%c0%afpasswd",
+        "description": "Unicode encoded slashes",
+        "os": ["unix"],
+        "severity": "high"
+      },
+      {
+        "vector": "..%2f..%2f..%2fetc%2fpasswd",
+        "description": "URL encoded slashes",
+        "os": ["unix"],
+        "severity": "high"
+      },
+      {
+        "vector": "\\\\server\\share\\file",
+        "description": "UNC path injection",
+        "os": ["windows"],
+        "severity": "critical"
+      },
+      {
+        "vector": "C:\\Windows\\System32\\cmd.exe",
+        "description": "Absolute Windows path",
+        "os": ["windows"],
+        "severity": "high"
+      },
+      {
+        "vector": "/proc/self/environ",
+        "description": "Process environment access",
+        "os": ["linux"],
+        "severity": "critical"
+      }
+    ]
+  },
+  "command_injection": {
+    "description": "Command injection attack vectors",
+    "payloads": [
+      {
+        "vector": "; cat /etc/passwd",
+        "description": "Semicolon command separator",
+        "os": ["unix", "linux"],
+        "severity": "critical"
+      },
+      {
+        "vector": "| whoami",
+        "description": "Pipe command execution",
+        "os": ["all"],
+        "severity": "critical"
+      },
+      {
+        "vector": "& net user",
+        "description": "Ampersand Windows command",
+        "os": ["windows"],
+        "severity": "critical"
+      },
+      {
+        "vector": "`id`",
+        "description": "Backtick command substitution",
+        "os": ["unix", "linux"],
+        "severity": "critical"
+      },
+      {
+        "vector": "$(whoami)",
+        "description": "Dollar command substitution",
+        "os": ["unix", "linux"],
+        "severity": "critical"
+      },
+      {
+        "vector": "${IFS}cat${IFS}/etc/passwd",
+        "description": "IFS bypass technique",
+        "os": ["unix", "linux"],
+        "severity": "high"
+      },
+      {
+        "vector": "\ncat /etc/passwd",
+        "description": "Newline injection",
+        "os": ["unix", "linux"],
+        "severity": "high"
+      },
+      {
+        "vector": "%0acat%20/etc/passwd",
+        "description": "URL encoded newline",
+        "os": ["unix", "linux"],
+        "severity": "high"
+      }
+    ]
+  },
+  "xss": {
+    "description": "Cross-site scripting attack vectors",
+    "payloads": [
+      {
+        "vector": "<script>alert('XSS')</script>",
+        "description": "Basic script tag",
+        "severity": "high"
+      },
+      {
+        "vector": "<img src=x onerror=alert('XSS')>",
+        "description": "Image error handler",
+        "severity": "high"
+      },
+      {
+        "vector": "<svg onload=alert('XSS')>",
+        "description": "SVG onload event",
+        "severity": "high"
+      },
+      {
+        "vector": "javascript:alert('XSS')",
+        "description": "JavaScript protocol",
+        "severity": "high"
+      },
+      {
+        "vector": "data:text/html,<script>alert('XSS')</script>",
+        "description": "Data URL with script",
+        "severity": "high"
+      },
+      {
+        "vector": "<style>*{display:none}</style>",
+        "description": "CSS injection",
+        "severity": "medium"
+      },
+      {
+        "vector": "%3Cscript%3Ealert('XSS')%3C/script%3E",
+        "description": "URL encoded script",
+        "severity": "high"
+      },
+      {
+        "vector": "\u003cscript\u003ealert('XSS')\u003c/script\u003e",
+        "description": "Unicode encoded script",
+        "severity": "high"
+      }
+    ]
+  },
+  "unicode": {
+    "description": "Unicode-based attack vectors",
+    "payloads": [
+      {
+        "vector": "\u202E\u0061\u0074\u0061\u0063\u006B",
+        "description": "Right-to-left override",
+        "severity": "medium"
+      },
+      {
+        "vector": "\u200B\u200C\u200D\uFEFF",
+        "description": "Zero-width characters",
+        "severity": "low"
+      },
+      {
+        "vector": "🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥",
+        "description": "Emoji flood (fire emoji x10)",
+        "severity": "low"
+      },
+      {
+        "vector": "\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301",
+        "description": "Combining character flood",
+        "severity": "medium"
+      },
+      {
+        "vector": "pаypal.com",
+        "description": "Homoglyph attack (Cyrillic 'a')",
+        "severity": "high"
+      }
+    ]
+  },
+  "null_byte": {
+    "description": "Null byte injection attacks",
+    "payloads": [
+      {
+        "vector": "file.txt\\x00.jpg",
+        "description": "Null byte extension bypass",
+        "severity": "high"
+      },
+      {
+        "vector": "admin\\x00.php",
+        "description": "Null byte in filename",
+        "severity": "high"
+      },
+      {
+        "vector": "%00",
+        "description": "URL encoded null byte",
+        "severity": "high"
+      },
+      {
+        "vector": "%2500",
+        "description": "Double encoded null byte",
+        "severity": "high"
+      }
+    ]
+  },
+  "overflow": {
+    "description": "Buffer overflow attempts",
+    "payloads": [
+      {
+        "vector": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "description": "100 character flood",
+        "severity": "low"
+      },
+      {
+        "vector": "../../../../../../../../../../../../../../../../../../../",
+        "description": "Deep traversal attempt",
+        "severity": "medium"
+      },
+      {
+        "vector": "{{{{{{{{{{{{{{{{{{{{}}}}}}}}}}}}}}}}}}}}",
+        "description": "Nested bracket flood",
+        "severity": "low"
+      }
+    ]
+  },
+  "format_string": {
+    "description": "Format string attacks",
+    "payloads": [
+      {
+        "vector": "%s%s%s%s%s%n",
+        "description": "Classic format string",
+        "severity": "high"
+      },
+      {
+        "vector": "%x%x%x%x",
+        "description": "Memory disclosure",
+        "severity": "medium"
+      },
+      {
+        "vector": "{0.__class__.__init__.__globals__}",
+        "description": "Python format string",
+        "severity": "high"
+      }
+    ]
+  },
+  "ldap": {
+    "description": "LDAP injection attacks",
+    "payloads": [
+      {
+        "vector": "*)(uid=*))(|(uid=*",
+        "description": "LDAP filter injection",
+        "severity": "high"
+      },
+      {
+        "vector": "admin)(&(password=*))",
+        "description": "LDAP auth bypass",
+        "severity": "critical"
+      }
+    ]
+  },
+  "xml": {
+    "description": "XML injection and XXE attacks",
+    "payloads": [
+      {
+        "vector": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "description": "XXE file disclosure",
+        "severity": "critical"
+      },
+      {
+        "vector": "<![CDATA[<script>alert('XSS')</script>]]>",
+        "description": "CDATA XSS bypass",
+        "severity": "high"
+      }
+    ]
+  },
+  "sql": {
+    "description": "SQL injection attacks",
+    "payloads": [
+      {
+        "vector": "' OR '1'='1",
+        "description": "Classic SQL injection",
+        "severity": "critical"
+      },
+      {
+        "vector": "'; DROP TABLE users; --",
+        "description": "SQL command injection",
+        "severity": "critical"
+      },
+      {
+        "vector": "1' UNION SELECT NULL, version() --",
+        "description": "Union-based injection",
+        "severity": "critical"
+      }
+    ]
+  }
+}

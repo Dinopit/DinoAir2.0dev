@@ -1,0 +1,190 @@
+{
+  "test_date": "2025-07-30T20:22:28.467728",
+  "total_tests": 25,
+  "total_blocked": 22,
+  "security_score": 88.0,
+  "test_results": {
+    "XSS Protection": {
+      "total": 8,
+      "blocked": 6,
+      "success_rate": 0.75,
+      "details": [
+        {
+          "test": "Script tag XSS",
+          "input": "<script>alert('XSS')</script>",
+          "output": "",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Image onerror XSS",
+          "input": "<img src=x onerror=alert('XSS')>",
+          "output": "<img src=x>",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "JavaScript protocol",
+          "input": "javascript:alert('XSS')",
+          "output": "",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "SVG onload",
+          "input": "<svg onload=alert('XSS')>",
+          "output": "<svg>",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Iframe javascript",
+          "input": "<iframe src='javascript:alert(1)'>",
+          "output": "",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Input autofocus",
+          "input": "<input onfocus=alert(1) autofocus>",
+          "output": "",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "URL encoded",
+          "input": "%3Cscript%3Ealert('XSS')%3C/script%3E",
+          "output": "%3Cscript%3Ealert('XSS')%3C/script%3E",
+          "status": "\u2717 PASSED"
+        },
+        {
+          "test": "HTML entities",
+          "input": "&#60;script&#62;alert('XSS')&#60;/script&#62;",
+          "output": "&#60;script&#62;alert('XSS')&#60;/script&#62;",
+          "status": "\u2717 PASSED"
+        }
+      ]
+    },
+    "SQL Injection Protection": {
+      "total": 7,
+      "blocked": 7,
+      "success_rate": 1.0,
+      "details": [
+        {
+          "test": "Classic OR injection",
+          "input": "' OR '1'='1",
+          "output": "'' OR ''1''=''1",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Drop table injection",
+          "input": "'; DROP TABLE users;--",
+          "output": "'' DROP TABLE users",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Union select",
+          "input": "1' UNION SELECT * FROM passwords--",
+          "output": "1'' UNION SELECT * FROM passwords",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Comment injection",
+          "input": "admin'--",
+          "output": "admin''",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Numeric comparison",
+          "input": "' OR 1=1--",
+          "output": "'' OR 1=1",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Order by injection",
+          "input": "1' ORDER BY 1--+",
+          "output": "1'' ORDER BY 1",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Time-based injection",
+          "input": "' WAITFOR DELAY '00:00:10'--",
+          "output": "'' WAITFOR DELAY ''00:00:10''",
+          "status": "\u2713 BLOCKED"
+        }
+      ]
+    },
+    "Unicode Attack Protection": {
+      "total": 10,
+      "blocked": 9,
+      "success_rate": 0.9,
+      "details": [
+        {
+          "test": "Zero-width space",
+          "input": "admin\u200b",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Zero-width non-joiner",
+          "input": "ad\u200cmin",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Zero-width no-break space",
+          "input": "admin\ufeff",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Cyrillic '\u0430' homograph",
+          "input": "\u0430dmin",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Multiple Cyrillic letters",
+          "input": "\u0430dm\u0456n",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "IPA Latin alpha",
+          "input": "\u0251dmin",
+          "output": "\u0251dmin",
+          "status": "\u2717 PASSED"
+        },
+        {
+          "test": "Right-to-left override",
+          "input": "\u202eadmin",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Left-to-right override",
+          "input": "admin\u202d",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Mathematical alphanumeric",
+          "input": "\ud835\uddba\ud835\uddbd\ud835\uddc6\ud835\uddc2\ud835\uddc7",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        },
+        {
+          "test": "Full-width characters",
+          "input": "\uff41\uff44\uff4d\uff49\uff4e",
+          "output": "admin",
+          "status": "\u2713 BLOCKED"
+        }
+      ]
+    }
+  },
+  "attack_summary": {
+    "attack_counts": {
+      "XSS": 7,
+      "SQL Injection": 7,
+      "Unicode": 7
+    },
+    "total_attacks": 21,
+    "last_reset": "2025-07-30T20:22:28.453722",
+    "monitoring_since": "2025-07-30T20:22:28.453722"
+  },
+  "improvement": "Enhanced security implementation successful"
+}

@@ -1,0 +1,19 @@
+DinoAir2Directorylayout.0dev/
+├── main.py                    # Application entry point
+├── requirements.txt           # Dependencies
+├── README.md                  # Comprehensive documentation
+├── config/
+│   └── app_config.json       # Configuration file
+├── src/                      # Main source code
+│   ├── models/               # Note and data models
+│   ├── database/             # Resilient database management
+│   ├── gui/                  # PySide6 interface
+│   │   ├── components/       # Reusable UI components
+│   │   └── pages/           # Application pages
+│   ├── agents/              # AI agents (LLM, Orchestrator, Translator)
+│   ├── tools/               # Memory, Timer, Code agents
+│   ├── input_processing/    # Input sanitization pipeline
+│   └── utils/               # Config, Logger, Enums
+├── tests/                   # Unit tests directory
+├── docs/                    # Documentation
+└── user_data/               # Auto-created user directories

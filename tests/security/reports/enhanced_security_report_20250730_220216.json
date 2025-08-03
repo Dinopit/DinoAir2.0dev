@@ -1,0 +1,35 @@
+{
+  "test_date": "2025-07-30T22:02:16.271547",
+  "total_tests": 31,
+  "total_blocked": 30,
+  "security_score": 96.77,
+  "categories": {
+    "Path Traversal": {
+      "total": 3,
+      "blocked": 3,
+      "success_rate": 100.0
+    },
+    "Command Injection": {
+      "total": 3,
+      "blocked": 3,
+      "success_rate": 100.0
+    },
+    "XSS": {
+      "total": 8,
+      "blocked": 7,
+      "success_rate": 87.5
+    },
+    "SQL Injection": {
+      "total": 7,
+      "blocked": 7,
+      "success_rate": 100.0
+    },
+    "Unicode": {
+      "total": 10,
+      "blocked": 10,
+      "success_rate": 100.0
+    }
+  },
+  "enhanced_security": true,
+  "recommendation": "Excellent security posture with enhanced protection"
+}
