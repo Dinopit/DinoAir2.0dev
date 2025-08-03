@@ -1,0 +1,23 @@
+{
+  "window": {
+    "geometry": [
+      760,
+      335,
+      1416,
+      800
+    ],
+    "maximized": true,
+    "zoom_level": 1.0
+  },
+  "splitters": {
+    "main_bottom": [
+      70,
+      30
+    ],
+    "notes_content": [
+      0,
+      100
+    ],
+    "notes_tag_panel": 250
+  }
+}
