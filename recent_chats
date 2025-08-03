@@ -1,7 +1,0 @@
-# Recent Chats 
-# goal is to show the recent chat session history 
-#refer to @completedandTodo diagram for flow 
-# should be able to show the recent chat sessions with the ability to filter by date, time, and other criteria
-# will sync with projects and tasks
-# cron style entries for Sqlite DB storage
-
