@@ -1,4 +1,5 @@
-# DinoAir 2.0
+# DinoAir 2.0 WORK IN PROGESS ALMOST COMEPLETE. However feel free to clone and make tools, add features. It is open source, its yours once you download it :)
+# No requirements to share what you build with this program. No fees, no hidden code. 
 
 A modular, AI-powered note-taking application built with PySide6 and Python.
 
