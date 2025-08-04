@@ -134,4 +134,8 @@ Follow the modular architecture principles and include proper documentation.
 
 ## License
 
-This project is open source and free to use. No attribution required.
+This project is licensed under the MIT License with Ethical Use Clause.
+
+- **Free for individuals and small teams** (≤10 employees)
+- **Organizations with >10 employees** must contact the author for approval
+- See [LICENSE](LICENSE) file for full terms
