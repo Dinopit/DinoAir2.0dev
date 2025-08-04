@@ -1,0 +1,175 @@
+# Advanced configuration for Pseudocode Translator
+# This demonstrates GPU usage, custom models, and advanced features
+
+llm:
+  # Model selection
+  model_type: codegen  # Using CodeGen for specialized code generation
+  model_path: ./models
+  
+  # Hardware configuration
+  n_ctx: 4096  # Larger context window
+  n_batch: 1024  # Larger batch size
+  n_threads: 8  # More threads for CPU processing
+  n_gpu_layers: 32  # Offload layers to GPU (requires CUDA)
+  
+  # Optimized generation parameters for code
+  temperature: 0.2  # Lower temperature for more deterministic code
+  top_p: 0.95
+  top_k: 50
+  repeat_penalty: 1.05
+  max_tokens: 2048  # Allow longer code generation
+  
+  # Enhanced performance settings
+  cache_enabled: true
+  cache_size_mb: 2000  # 2GB cache
+  cache_ttl_hours: 72  # Keep cache for 3 days
+  
+  # Advanced model management
+  max_loaded_models: 5  # Keep more models in memory
+  model_ttl_minutes: 240  # Keep models loaded for 4 hours
+  auto_download: true
+  min_available_memory_gb: 4.0  # Ensure at least 4GB free memory
+  
+  # Validation and timeouts
+  timeout_seconds: 120  # Longer timeout for complex code
+  validation_level: lenient  # More permissive for experimental code
+  
+  # Model-specific configurations
+  model_configs:
+    codegen:
+      enabled: true
+      model_path: ./models/codegen-2B-mono  # Larger model
+      auto_download: true
+      download_url: https://huggingface.co/Salesforce/codegen-2B-mono
+      checksum: sha256:def456...
+      parameters:
+        temperature: 0.15  # Very low for consistent code
+        max_tokens: 2048
+        device: cuda  # Force GPU usage
+        torch_dtype: float16
+        use_cache: true
+        trust_remote_code: true
+        load_in_8bit: true  # 8-bit quantization for memory efficiency
+        device_map: auto  # Automatic device mapping
+    
+    qwen:
+      enabled: true
+      model_path: ./models/qwen-14b/qwen-14b-q5_k_m.gguf  # Larger Qwen model
+      auto_download: true
+      download_url: https://huggingface.co/TheBloke/Qwen-14B-Chat-GGUF/resolve/main/qwen-14b-chat.Q5_K_M.gguf
+      parameters:
+        temperature: 0.25
+        max_tokens: 1536
+        n_gpu_layers: 40  # More layers on GPU
+        rope_freq_base: 10000
+        rope_freq_scale: 1.0
+        mlock: true  # Lock model in memory
+        mmap: true  # Memory-mapped I/O
+    
+    gpt2-large:
+      enabled: true
+      model_path: ./models/gpt2-large
+      auto_download: true
+      parameters:
+        temperature: 0.4
+        max_tokens: 1024
+        device: cuda:0  # Specific GPU device
+        use_cache: true
+        gradient_checkpointing: false
+        mixed_precision: fp16
+    
+    # Custom fine-tuned model
+    python-expert:
+      enabled: true
+      model_path: ./models/custom/python-expert-v2.gguf
+      auto_download: false  # Custom model, manual download
+      parameters:
+        temperature: 0.1
+        max_tokens: 2048
+        n_gpu_layers: -1  # All layers on GPU
+        context_length: 8192  # Extended context
+        custom_system_prompt: |
+          You are a Python expert specializing in:
+          - Data science and machine learning
+          - Web development with Django/FastAPI
+          - System programming and automation
+          - Performance optimization
+          Generate production-ready code with comprehensive error handling.
+
+# Advanced translation settings
+max_context_length: 8192  # Support for larger contexts
+preserve_comments: true
+preserve_docstrings: true
+auto_import_common: true
+
+# Enhanced code generation
+code_generation:
+  # Import management
+  auto_imports:
+    - typing
+    - dataclasses
+    - pathlib
+    - logging
+  
+  # Code patterns
+  prefer_pathlib: true  # Use pathlib over os.path
+  prefer_f_strings: true  # Use f-strings over .format()
+  use_type_annotations: always  # always, optional, or never
+  
+  # Error handling
+  wrap_in_try_except: true
+  include_logging: true
+  add_input_validation: true
+
+# Code style preferences
+indent_size: 4
+use_type_hints: true
+max_line_length: 100
+quote_style: double  # single or double
+
+# Enhanced validation
+validate_imports: true
+check_undefined_vars: true
+allow_unsafe_operations: false
+lint_generated_code: true  # Run linter on output
+format_with_black: true  # Auto-format with Black
+
+# Security settings
+security:
+  block_dangerous_imports:
+    - os.system
+    - subprocess.call
+    - eval
+    - exec
+  
+  scan_for_secrets: true
+  max_file_operations: 10  # Limit file I/O in generated code
+
+# Logging configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: ./logs/translator.log
+  max_file_size_mb: 100
+  backup_count: 5
+
+# GUI preferences
+gui_theme: material-dark
+gui_font_size: 13
+gui_font_family: "JetBrains Mono"
+syntax_highlighting: true
+show_line_numbers: true
+highlight_current_line: true
+auto_save_interval_seconds: 300
+
+# Experimental features
+experimental:
+  enable_streaming: true  # Stream token generation
+  enable_beam_search: false  # Use beam search for better results
+  beam_width: 3
+  enable_speculative_decoding: true
+  speculation_temperature: 0.8
+  enable_flash_attention: true  # Faster attention mechanism
+  enable_model_parallelism: false  # Split model across GPUs
+  enable_pipeline_parallelism: false
+  enable_mixed_precision_training: true

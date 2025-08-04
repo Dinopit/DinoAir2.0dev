@@ -1,0 +1,360 @@
+# Data Pipeline Example
+# This pseudocode demonstrates a comprehensive data processing pipeline
+
+CREATE a DataPipeline class with:
+    - name: string
+    - stages: list of pipeline stages
+    - config: configuration dictionary
+    - metrics: performance metrics
+    - error_handler: error handling function
+    
+    METHOD __init__(name, config = None)
+        SET self.name TO name
+        SET self.stages TO empty list
+        SET self.config TO config OR default_config()
+        SET self.metrics TO {
+            "processed": 0,
+            "failed": 0,
+            "start_time": None,
+            "end_time": None
+        }
+        SET self.error_handler TO default_error_handler
+    END METHOD
+    
+    METHOD add_stage(stage_function, name = None)
+        SET stage TO {
+            "function": stage_function,
+            "name": name OR stage_function.__name__,
+            "metrics": {"count": 0, "errors": 0, "duration": 0}
+        }
+        APPEND stage TO self.stages
+        RETURN self  # For chaining
+    END METHOD
+    
+    METHOD process(data)
+        SET self.metrics["start_time"] TO current_time()
+        SET result TO data
+        
+        FOR EACH stage IN self.stages
+            TRY
+                SET stage_start TO current_time()
+                SET result TO stage["function"](result, self.config)
+                SET stage["metrics"]["duration"] += current_time() - stage_start
+                SET stage["metrics"]["count"] += 1
+            CATCH Exception as e
+                SET stage["metrics"]["errors"] += 1
+                SET self.metrics["failed"] += 1
+                
+                IF self.error_handler IS NOT None THEN
+                    SET result TO self.error_handler(e, result, stage)
+                ELSE
+                    RAISE e
+                END IF
+            END TRY
+        END FOR
+        
+        SET self.metrics["end_time"] TO current_time()
+        SET self.metrics["processed"] += 1
+        RETURN result
+    END METHOD
+    
+    METHOD get_metrics()
+        SET total_duration TO self.metrics["end_time"] - self.metrics["start_time"]
+        SET report TO {
+            "pipeline": self.name,
+            "total_processed": self.metrics["processed"],
+            "total_failed": self.metrics["failed"],
+            "total_duration": total_duration,
+            "average_duration": total_duration / self.metrics["processed"],
+            "stages": []
+        }
+        
+        FOR EACH stage IN self.stages
+            APPEND {
+                "name": stage["name"],
+                "processed": stage["metrics"]["count"],
+                "errors": stage["metrics"]["errors"],
+                "average_duration": stage["metrics"]["duration"] / stage["metrics"]["count"]
+            } TO report["stages"]
+        END FOR
+        
+        RETURN report
+    END METHOD
+END CLASS
+
+# Data transformation functions
+FUNCTION clean_data(data, config)
+    SET cleaned TO empty list
+    
+    FOR EACH record IN data
+        # Remove null values
+        SET cleaned_record TO {}
+        FOR EACH key, value IN record
+            IF value IS NOT None AND value != "" THEN
+                SET cleaned_record[key] TO value
+            END IF
+        END FOR
+        
+        # Skip empty records
+        IF length(cleaned_record) > 0 THEN
+            APPEND cleaned_record TO cleaned
+        END IF
+    END FOR
+    
+    RETURN cleaned
+END FUNCTION
+
+FUNCTION validate_data(data, config)
+    SET validated TO empty list
+    SET validation_rules TO config.get("validation_rules", {})
+    
+    FOR EACH record IN data
+        SET is_valid TO True
+        
+        # Check required fields
+        FOR EACH field IN validation_rules.get("required_fields", [])
+            IF field NOT IN record THEN
+                PRINT "Missing required field: " + field
+                SET is_valid TO False
+                BREAK
+            END IF
+        END FOR
+        
+        # Check data types
+        IF is_valid THEN
+            FOR EACH field, expected_type IN validation_rules.get("field_types", {})
+                IF field IN record AND NOT isinstance(record[field], expected_type) THEN
+                    PRINT "Invalid type for " + field
+                    SET is_valid TO False
+                    BREAK
+                END IF
+            END FOR
+        END IF
+        
+        # Check value ranges
+        IF is_valid THEN
+            FOR EACH field, (min_val, max_val) IN validation_rules.get("ranges", {})
+                IF field IN record THEN
+                    SET value TO record[field]
+                    IF value < min_val OR value > max_val THEN
+                        PRINT field + " out of range: " + str(value)
+                        SET is_valid TO False
+                        BREAK
+                    END IF
+                END IF
+            END FOR
+        END IF
+        
+        IF is_valid THEN
+            APPEND record TO validated
+        END IF
+    END FOR
+    
+    RETURN validated
+END FUNCTION
+
+FUNCTION transform_data(data, config)
+    SET transformed TO empty list
+    SET transformations TO config.get("transformations", {})
+    
+    FOR EACH record IN data
+        SET new_record TO copy(record)
+        
+        # Apply field transformations
+        FOR EACH field, transform_func IN transformations
+            IF field IN new_record THEN
+                SET new_record[field] TO transform_func(new_record[field])
+            END IF
+        END FOR
+        
+        # Add computed fields
+        IF "age" IN new_record AND "birth_year" IN new_record THEN
+            SET new_record["age"] TO current_year() - new_record["birth_year"]
+        END IF
+        
+        IF "first_name" IN new_record AND "last_name" IN new_record THEN
+            SET new_record["full_name"] TO new_record["first_name"] + " " + new_record["last_name"]
+        END IF
+        
+        APPEND new_record TO transformed
+    END FOR
+    
+    RETURN transformed
+END FUNCTION
+
+FUNCTION aggregate_data(data, config)
+    SET aggregations TO {}
+    SET group_by TO config.get("group_by", None)
+    
+    IF group_by IS None THEN
+        # Simple aggregation
+        SET aggregations["count"] TO length(data)
+        SET aggregations["sum"] TO {}
+        SET aggregations["avg"] TO {}
+        SET aggregations["min"] TO {}
+        SET aggregations["max"] TO {}
+        
+        # Calculate aggregations for numeric fields
+        FOR EACH field IN get_numeric_fields(data)
+            SET values TO [record[field] for record in data if field in record]
+            SET aggregations["sum"][field] TO sum(values)
+            SET aggregations["avg"][field] TO sum(values) / length(values)
+            SET aggregations["min"][field] TO min(values)
+            SET aggregations["max"][field] TO max(values)
+        END FOR
+    ELSE
+        # Group by aggregation
+        SET groups TO {}
+        
+        FOR EACH record IN data
+            SET key TO record.get(group_by, "unknown")
+            IF key NOT IN groups THEN
+                SET groups[key] TO empty list
+            END IF
+            APPEND record TO groups[key]
+        END FOR
+        
+        FOR EACH group_key, group_data IN groups
+            SET aggregations[group_key] TO aggregate_data(group_data, {"group_by": None})
+        END FOR
+    END IF
+    
+    RETURN aggregations
+END FUNCTION
+
+FUNCTION enrich_data(data, config)
+    SET enriched TO empty list
+    SET lookup_tables TO config.get("lookup_tables", {})
+    
+    FOR EACH record IN data
+        SET enriched_record TO copy(record)
+        
+        # Add data from lookup tables
+        FOR EACH field, lookup_config IN lookup_tables
+            SET lookup_key TO record.get(lookup_config["key_field"])
+            IF lookup_key IS NOT None THEN
+                SET lookup_data TO lookup_config["table"].get(lookup_key, {})
+                FOR EACH k, v IN lookup_data
+                    SET enriched_record[field + "_" + k] TO v
+                END FOR
+            END IF
+        END FOR
+        
+        # Add timestamps
+        SET enriched_record["processed_at"] TO current_timestamp()
+        
+        APPEND enriched_record TO enriched
+    END FOR
+    
+    RETURN enriched
+END FUNCTION
+
+# Data sink functions
+FUNCTION save_to_database(data, config)
+    SET connection TO create_db_connection(config["database"])
+    SET table_name TO config.get("table_name", "processed_data")
+    SET batch_size TO config.get("batch_size", 1000)
+    
+    TRY
+        # Process in batches
+        FOR i FROM 0 TO length(data) STEP batch_size
+            SET batch TO data[i:i+batch_size]
+            
+            # Build insert query
+            SET columns TO get_columns(batch[0])
+            SET placeholders TO ["%s" for _ in columns]
+            SET query TO f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(placeholders)})"
+            
+            # Execute batch insert
+            SET values TO [[record.get(col) for col in columns] for record in batch]
+            connection.executemany(query, values)
+        END FOR
+        
+        connection.commit()
+        PRINT f"Saved {length(data)} records to {table_name}"
+        
+    CATCH DatabaseError as e
+        connection.rollback()
+        PRINT f"Database error: {str(e)}"
+        RAISE e
+    FINALLY
+        connection.close()
+    END TRY
+    
+    RETURN data
+END FUNCTION
+
+# Example usage
+PROCEDURE main()
+    # Configure pipeline
+    SET config TO {
+        "validation_rules": {
+            "required_fields": ["id", "name", "value"],
+            "field_types": {
+                "id": int,
+                "value": (int, float),
+                "name": str
+            },
+            "ranges": {
+                "value": (0, 1000000),
+                "age": (0, 150)
+            }
+        },
+        "transformations": {
+            "name": lambda x: x.strip().title(),
+            "value": lambda x: round(x, 2)
+        },
+        "group_by": "category",
+        "database": {
+            "host": "localhost",
+            "port": 5432,
+            "name": "analytics",
+            "user": "data_user",
+            "password": "secure_password"
+        },
+        "table_name": "processed_records"
+    }
+    
+    # Create pipeline
+    SET pipeline TO new DataPipeline("ETL Pipeline", config)
+    
+    # Add stages
+    pipeline.add_stage(clean_data, "Clean") \
+            .add_stage(validate_data, "Validate") \
+            .add_stage(transform_data, "Transform") \
+            .add_stage(enrich_data, "Enrich") \
+            .add_stage(aggregate_data, "Aggregate") \
+            .add_stage(save_to_database, "Save")
+    
+    # Sample data
+    SET raw_data TO [
+        {"id": 1, "name": "  john doe  ", "value": 100.456, "category": "A"},
+        {"id": 2, "name": "jane smith", "value": 200.789, "category": "B"},
+        {"id": 3, "name": None, "value": 300, "category": "A"},
+        {"id": 4, "name": "bob jones", "value": None, "category": "C"},
+        {"id": 5, "name": "alice brown", "value": 500.123, "category": "B"}
+    ]
+    
+    # Process data
+    TRY
+        SET result TO pipeline.process(raw_data)
+        PRINT "Pipeline completed successfully"
+        
+        # Show metrics
+        SET metrics TO pipeline.get_metrics()
+        PRINT "Pipeline Metrics:"
+        PRINT f"  Total processed: {metrics['total_processed']}"
+        PRINT f"  Total failed: {metrics['total_failed']}"
+        PRINT f"  Duration: {metrics['total_duration']}s"
+        
+        FOR EACH stage IN metrics["stages"]
+            PRINT f"  {stage['name']}: {stage['processed']} processed, {stage['errors']} errors"
+        END FOR
+        
+    CATCH Exception as e
+        PRINT f"Pipeline failed: {str(e)}"
+    END TRY
+END PROCEDURE
+
+# Run the pipeline
+CALL main()

@@ -9,7 +9,7 @@ __author__ = "DinoAir Development Team"
 # Core module imports for easy access
 from .models import Note, NoteList
 from .database import DatabaseManager, initialize_user_databases
-from .utils import ConfigLoader, Logger, Enums, DinoPitColors
+from .utils import ConfigLoader, Logger, Enums
 
 __all__ = [
     'Note', 
@@ -18,6 +18,5 @@ __all__ = [
     'initialize_user_databases',
     'ConfigLoader',
     'Logger',
-    'Enums',
-    'DinoPitColors'
+    'Enums'
 ]

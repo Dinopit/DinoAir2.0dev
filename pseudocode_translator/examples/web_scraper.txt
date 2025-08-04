@@ -1,0 +1,57 @@
+Create a WebScraper class that:
+- has a base_url attribute
+- has a headers attribute with a default user agent
+
+The class should have these methods:
+
+__init__ method that:
+- takes base_url as parameter
+- sets up a requests session
+- sets default headers with user-agent "Mozilla/5.0"
+
+fetch_page method that:
+- takes a relative url path
+- combines it with base_url to make full url
+- makes a GET request with the session
+- handles connection errors and returns None if failed
+- returns the response object if successful
+
+extract_links method that:
+- takes html content as parameter
+- uses BeautifulSoup to parse the HTML
+- finds all <a> tags with href attributes
+- filters out external links (not starting with base_url)
+- filters out mailto: and javascript: links
+- returns a list of absolute URLs
+
+extract_text method that:
+- takes html content and a CSS selector
+- uses BeautifulSoup to find elements matching the selector
+- extracts and cleans the text from each element
+- removes extra whitespace
+- returns a list of text strings
+
+scrape_product_info method that:
+- takes a product page url
+- fetches the page content
+- extracts product title from h1 tag
+- extracts price from class "price"
+- extracts description from class "description"
+- extracts image URLs from img tags in class "product-images"
+- returns a dictionary with all the extracted data
+- handles missing elements gracefully by using None
+
+save_to_json method that:
+- takes data (list of dictionaries) and filename
+- saves the data as formatted JSON
+- includes timestamp in the output
+
+scrape_all_products method that:
+- takes a category page url
+- fetches the category page
+- extracts all product links from the page
+- scrapes each product page using scrape_product_info
+- shows progress (e.g., "Scraping product 1 of 20")
+- handles errors for individual products without stopping
+- saves all results to JSON file
+- returns the list of scraped products

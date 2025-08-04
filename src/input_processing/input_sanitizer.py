@@ -346,6 +346,9 @@ class InputPipeline:
 # Maintain backward compatibility by re-exporting IntentType as Intent
 Intent = IntentType
 
+# Maintain backward compatibility for InputSanitizer
+InputSanitizer = InputPipeline
+
 
 # Example: Integration with PySide6 GUI
 # =====================================

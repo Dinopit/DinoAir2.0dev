@@ -1,0 +1,363 @@
+# Machine Learning Pipeline Example
+# This pseudocode demonstrates a complete ML workflow from data prep to model deployment
+
+CREATE a MLPipeline class with:
+    - model_name: string
+    - model_type: string (classification, regression, clustering)
+    - features: list of feature names
+    - target: target variable name
+    - model: trained model object
+    - scaler: data scaler object
+    - metrics: model performance metrics
+    
+    METHOD __init__(model_name, model_type)
+        SET self.model_name TO model_name
+        SET self.model_type TO model_type
+        SET self.features TO empty list
+        SET self.target TO None
+        SET self.model TO None
+        SET self.scaler TO None
+        SET self.metrics TO {}
+    END METHOD
+    
+    METHOD load_data(file_path)
+        TRY
+            SET data TO read_csv(file_path)
+            PRINT "Loaded " + str(data.shape[0]) + " rows and " + str(data.shape[1]) + " columns"
+            RETURN data
+        CATCH FileNotFoundError
+            RAISE Exception("Data file not found: " + file_path)
+        END TRY
+    END METHOD
+    
+    METHOD preprocess_data(data, target_column)
+        SET self.target TO target_column
+        SET self.features TO [col for col in data.columns if col != target_column]
+        
+        # Handle missing values
+        FOR EACH column IN data.columns
+            IF data[column].dtype == "numeric" THEN
+                # Fill numeric columns with median
+                SET median_value TO data[column].median()
+                data[column].fillna(median_value)
+            ELSE
+                # Fill categorical columns with mode
+                SET mode_value TO data[column].mode()[0]
+                data[column].fillna(mode_value)
+            END IF
+        END FOR
+        
+        # Encode categorical variables
+        SET categorical_features TO []
+        SET label_encoders TO {}
+        
+        FOR EACH feature IN self.features
+            IF data[feature].dtype == "object" THEN
+                APPEND feature TO categorical_features
+                SET encoder TO LabelEncoder()
+                data[feature] = encoder.fit_transform(data[feature])
+                SET label_encoders[feature] TO encoder
+            END IF
+        END FOR
+        
+        # Split features and target
+        SET X TO data[self.features]
+        SET y TO data[self.target]
+        
+        # Scale features
+        SET self.scaler TO StandardScaler()
+        SET X_scaled TO self.scaler.fit_transform(X)
+        
+        RETURN X_scaled, y, label_encoders
+    END METHOD
+    
+    METHOD split_data(X, y, test_size = 0.2, random_state = 42)
+        SET X_train, X_test, y_train, y_test TO train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
+        
+        PRINT "Training set: " + str(X_train.shape)
+        PRINT "Test set: " + str(X_test.shape)
+        
+        RETURN X_train, X_test, y_train, y_test
+    END METHOD
+    
+    METHOD train_model(X_train, y_train, algorithm = "auto")
+        IF algorithm == "auto" THEN
+            SET algorithm TO self._select_algorithm()
+        END IF
+        
+        # Create model based on type and algorithm
+        IF self.model_type == "classification" THEN
+            IF algorithm == "random_forest" THEN
+                SET self.model TO RandomForestClassifier(
+                    n_estimators=100,
+                    max_depth=10,
+                    random_state=42
+                )
+            ELSE IF algorithm == "gradient_boosting" THEN
+                SET self.model TO GradientBoostingClassifier(
+                    n_estimators=100,
+                    learning_rate=0.1,
+                    max_depth=5
+                )
+            ELSE IF algorithm == "neural_network" THEN
+                SET self.model TO MLPClassifier(
+                    hidden_layer_sizes=(100, 50),
+                    activation='relu',
+                    solver='adam',
+                    max_iter=500
+                )
+            END IF
+        ELSE IF self.model_type == "regression" THEN
+            IF algorithm == "linear" THEN
+                SET self.model TO LinearRegression()
+            ELSE IF algorithm == "random_forest" THEN
+                SET self.model TO RandomForestRegressor(
+                    n_estimators=100,
+                    max_depth=10,
+                    random_state=42
+                )
+            ELSE IF algorithm == "xgboost" THEN
+                SET self.model TO XGBRegressor(
+                    n_estimators=100,
+                    learning_rate=0.1,
+                    max_depth=5
+                )
+            END IF
+        END IF
+        
+        # Train the model
+        PRINT "Training " + algorithm + " model..."
+        SET start_time TO current_time()
+        
+        self.model.fit(X_train, y_train)
+        
+        SET training_time TO current_time() - start_time
+        PRINT "Model trained in " + str(training_time) + " seconds"
+        
+        RETURN self.model
+    END METHOD
+    
+    METHOD evaluate_model(X_test, y_test)
+        SET y_pred TO self.model.predict(X_test)
+        
+        IF self.model_type == "classification" THEN
+            SET self.metrics["accuracy"] TO accuracy_score(y_test, y_pred)
+            SET self.metrics["precision"] TO precision_score(y_test, y_pred, average='weighted')
+            SET self.metrics["recall"] TO recall_score(y_test, y_pred, average='weighted')
+            SET self.metrics["f1_score"] TO f1_score(y_test, y_pred, average='weighted')
+            SET self.metrics["confusion_matrix"] TO confusion_matrix(y_test, y_pred)
+            
+            # Classification report
+            SET report TO classification_report(y_test, y_pred)
+            PRINT "\nClassification Report:"
+            PRINT report
+            
+        ELSE IF self.model_type == "regression" THEN
+            SET self.metrics["mse"] TO mean_squared_error(y_test, y_pred)
+            SET self.metrics["rmse"] TO sqrt(self.metrics["mse"])
+            SET self.metrics["mae"] TO mean_absolute_error(y_test, y_pred)
+            SET self.metrics["r2_score"] TO r2_score(y_test, y_pred)
+            
+            PRINT "\nRegression Metrics:"
+            PRINT "MSE: " + str(self.metrics["mse"])
+            PRINT "RMSE: " + str(self.metrics["rmse"])
+            PRINT "MAE: " + str(self.metrics["mae"])
+            PRINT "R² Score: " + str(self.metrics["r2_score"])
+        END IF
+        
+        RETURN self.metrics
+    END METHOD
+    
+    METHOD hyperparameter_tuning(X_train, y_train, param_grid = None)
+        IF param_grid IS None THEN
+            # Default parameter grid
+            IF isinstance(self.model, RandomForestClassifier) THEN
+                SET param_grid TO {
+                    'n_estimators': [50, 100, 200],
+                    'max_depth': [5, 10, 20, None],
+                    'min_samples_split': [2, 5, 10],
+                    'min_samples_leaf': [1, 2, 4]
+                }
+            END IF
+        END IF
+        
+        SET grid_search TO GridSearchCV(
+            self.model,
+            param_grid,
+            cv=5,
+            scoring='accuracy' if self.model_type == 'classification' else 'r2',
+            n_jobs=-1,
+            verbose=1
+        )
+        
+        PRINT "Performing hyperparameter tuning..."
+        grid_search.fit(X_train, y_train)
+        
+        SET self.model TO grid_search.best_estimator_
+        PRINT "Best parameters: " + str(grid_search.best_params_)
+        PRINT "Best score: " + str(grid_search.best_score_)
+        
+        RETURN grid_search.best_params_
+    END METHOD
+    
+    METHOD feature_importance(X_train)
+        IF hasattr(self.model, 'feature_importances_') THEN
+            SET importances TO self.model.feature_importances_
+            SET feature_importance_df TO DataFrame({
+                'feature': self.features,
+                'importance': importances
+            })
+            SET feature_importance_df TO feature_importance_df.sort_values(
+                'importance', ascending=False
+            )
+            
+            PRINT "\nTop 10 Most Important Features:"
+            FOR i FROM 0 TO min(10, length(feature_importance_df))
+                PRINT str(i+1) + ". " + feature_importance_df.iloc[i]['feature'] + 
+                      ": " + str(feature_importance_df.iloc[i]['importance'])
+            END FOR
+            
+            RETURN feature_importance_df
+        ELSE
+            PRINT "Model does not support feature importance"
+            RETURN None
+        END IF
+    END METHOD
+    
+    METHOD cross_validate(X, y, cv_folds = 5)
+        SET scoring_metrics TO ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
+        
+        IF self.model_type == "regression" THEN
+            SET scoring_metrics TO ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
+        END IF
+        
+        SET cv_results TO cross_validate(
+            self.model, X, y,
+            cv=cv_folds,
+            scoring=scoring_metrics,
+            return_train_score=True
+        )
+        
+        PRINT "\nCross-Validation Results (" + str(cv_folds) + " folds):"
+        FOR EACH metric IN scoring_metrics
+            SET mean_score TO cv_results['test_' + metric].mean()
+            SET std_score TO cv_results['test_' + metric].std()
+            PRINT metric + ": " + str(mean_score) + " (+/- " + str(std_score) + ")"
+        END FOR
+        
+        RETURN cv_results
+    END METHOD
+    
+    METHOD predict(new_data)
+        # Ensure same preprocessing as training data
+        IF self.scaler IS NOT None THEN
+            SET new_data_scaled TO self.scaler.transform(new_data)
+        ELSE
+            SET new_data_scaled TO new_data
+        END IF
+        
+        SET predictions TO self.model.predict(new_data_scaled)
+        
+        # Get prediction probabilities for classification
+        IF self.model_type == "classification" AND hasattr(self.model, 'predict_proba') THEN
+            SET probabilities TO self.model.predict_proba(new_data_scaled)
+            RETURN predictions, probabilities
+        ELSE
+            RETURN predictions
+        END IF
+    END METHOD
+    
+    METHOD save_model(file_path)
+        SET model_data TO {
+            'model': self.model,
+            'scaler': self.scaler,
+            'features': self.features,
+            'target': self.target,
+            'model_type': self.model_type,
+            'metrics': self.metrics
+        }
+        
+        TRY
+            WITH open(file_path, 'wb') as file
+                pickle.dump(model_data, file)
+            END WITH
+            PRINT "Model saved to " + file_path
+        CATCH Exception as e
+            PRINT "Error saving model: " + str(e)
+        END TRY
+    END METHOD
+    
+    METHOD load_model(file_path)
+        TRY
+            WITH open(file_path, 'rb') as file
+                SET model_data TO pickle.load(file)
+            END WITH
+            
+            SET self.model TO model_data['model']
+            SET self.scaler TO model_data['scaler']
+            SET self.features TO model_data['features']
+            SET self.target TO model_data['target']
+            SET self.model_type TO model_data['model_type']
+            SET self.metrics TO model_data['metrics']
+            
+            PRINT "Model loaded from " + file_path
+        CATCH Exception as e
+            PRINT "Error loading model: " + str(e)
+        END TRY
+    END METHOD
+    
+    METHOD _select_algorithm()
+        # Auto-select algorithm based on data characteristics
+        IF self.model_type == "classification" THEN
+            RETURN "random_forest"
+        ELSE IF self.model_type == "regression" THEN
+            RETURN "xgboost"
+        ELSE
+            RETURN "kmeans"
+        END IF
+    END METHOD
+END CLASS
+
+# Example usage
+PROCEDURE main()
+    # Create ML pipeline
+    SET pipeline TO new MLPipeline("Customer Churn Predictor", "classification")
+    
+    # Load and preprocess data
+    SET data TO pipeline.load_data("customer_data.csv")
+    SET X, y, encoders TO pipeline.preprocess_data(data, "churn")
+    
+    # Split data
+    SET X_train, X_test, y_train, y_test TO pipeline.split_data(X, y)
+    
+    # Train model
+    SET model TO pipeline.train_model(X_train, y_train, algorithm="random_forest")
+    
+    # Hyperparameter tuning
+    SET best_params TO pipeline.hyperparameter_tuning(X_train, y_train)
+    
+    # Evaluate model
+    SET metrics TO pipeline.evaluate_model(X_test, y_test)
+    
+    # Cross-validation
+    SET cv_results TO pipeline.cross_validate(X, y)
+    
+    # Feature importance
+    SET feature_importance TO pipeline.feature_importance(X_train)
+    
+    # Save model
+    pipeline.save_model("churn_model.pkl")
+    
+    # Make predictions on new data
+    SET new_customer TO [[25, 2, 50000, 3, 1]]  # age, tenure, income, products, active
+    SET prediction, probability TO pipeline.predict(new_customer)
+    
+    PRINT "\nNew Customer Prediction:"
+    PRINT "Churn prediction: " + str(prediction[0])
+    PRINT "Churn probability: " + str(probability[0][1])
+END PROCEDURE
+
+# Run the ML pipeline
+CALL main()

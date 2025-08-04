@@ -1,0 +1,30 @@
+{
+  "llm": {
+    "model_type": "qwen",
+    "model_path": "./models",
+    "model_file": "qwen-7b-q4_k_m.gguf",
+    "temperature": 0.3,
+    "max_tokens": 1024,
+    "cache_enabled": true,
+    "auto_download": false,
+    "model_configs": {
+      "qwen": {
+        "enabled": true,
+        "parameters": {
+          "temperature": 0.3,
+          "max_tokens": 1024
+        }
+      }
+    }
+  },
+  "max_context_length": 2048,
+  "preserve_comments": true,
+  "preserve_docstrings": true,
+  "auto_import_common": true,
+  "indent_size": 4,
+  "use_type_hints": true,
+  "max_line_length": 88,
+  "validate_imports": true,
+  "check_undefined_vars": true,
+  "allow_unsafe_operations": false
+}

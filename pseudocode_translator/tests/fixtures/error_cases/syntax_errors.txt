@@ -1,0 +1,47 @@
+# Missing closing parenthesis
+def broken_function(x, y:
+    return x + y
+
+# Invalid indentation
+def calculate():
+return 42
+    
+# Mixed tabs and spaces
+def mixed_indent():
+	if True:
+    print("Mixed")
+		
+# Unclosed string
+message = "This string never ends
+
+# Invalid syntax in class
+class BrokenClass
+    def __init__(self):
+        pass
+
+# Missing colon
+if x > 5
+    print("Greater")
+    
+# Invalid assignment
+5 = x
+
+# Incomplete function definition
+def
+
+# Invalid import statement
+import from module
+
+# Broken list comprehension
+numbers = [x for x in range(10) if]
+
+# Invalid lambda
+func = lambda x, y
+
+# Mismatched brackets
+data = [1, 2, 3}
+
+# Invalid decorator syntax
+@
+def decorated():
+    pass

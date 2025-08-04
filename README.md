@@ -27,17 +27,8 @@ src/
 - **Multi-Database Support**: Separate databases for notes, memory cache, and user tools
 - **User Isolation**: Per-user database and configuration isolation
 
-### Notes Feature ✨
-- **Rich Text Editor**: Full formatting support with bold, italic, underline, colors, and more
-- **Auto-save**: Intelligent auto-save with conflict detection and visual status indicators
-- **Tag Management**: Organize notes with tags, featuring visual tag cloud interface
-- **Advanced Search**: Real-time search across titles, content, and tags with highlighting
-- **Export Options**: Export notes as HTML, TXT, PDF, or ZIP archives
-- **Security-First**: Comprehensive input sanitization, XSS protection, and rate limiting
-- **Keyboard Shortcuts**: Efficient navigation (Ctrl+F for search, Ctrl+N for new note)
-
 ### GUI Components
-- **Modern Interface**: Clean PySide6-based interface with DinoAir color scheme
+- **Modern Interface**: Clean PySide6-based interface
 - **Responsive Layout**: Resizable panes and adaptive UI
 - **Navigation Sidebar**: Easy switching between different app sections
 - **Status Monitoring**: Real-time database and system status
@@ -53,6 +44,15 @@ src/
 - **Pattern Detection**: Automated pattern recognition
 - **Profanity Filtering**: Content moderation capabilities
 - **Intent Classification**: Smart categorization of user input
+
+### Pseudocode Translator
+- **Natural Language to Code**: Convert human-readable pseudocode into production-ready code
+- **Multi-Language Output**: Support for 14+ programming languages including Python, JavaScript, Java, C++, Go, Rust, and more
+- **Modern Syntax Support**: Handles modern programming constructs like async/await, pattern matching, and type hints
+- **Enterprise Features**: Built-in caching, parallel processing, and streaming capabilities
+- **Intelligent Validation**: AST-based parsing with semantic validation and error recovery
+- **GUI Integration**: Seamlessly integrated into DinoAir 2.0's Tools menu
+- **Extensible Architecture**: Plugin system for custom models and language extensions
 
 ## Installation
 
@@ -108,8 +108,9 @@ DinoAir2.0dev/
 │   │       └── file_search_page.py
 │   ├── agents/            # AI agents (planned)
 │   │   └── __init__.py
-│   ├── tools/             # Utility tools (planned)
-│   │   └── __init__.py
+│   ├── tools/             # Utility tools
+│   │   ├── __init__.py
+│   │   └── pseudocode_tool.py
 │   ├── input_processing/  # Input processing pipeline
 │   │   ├── __init__.py
 │   │   └── input_sanitizer.py
@@ -118,10 +119,23 @@ DinoAir2.0dev/
 │       ├── config_loader.py
 │       ├── logger.py
 │       └── enums.py
-├── tests/                 # Unit tests
+├── pseudocode_translator/ # Pseudocode to code translator
+│   ├── __init__.py
+│   ├── translator.py      # Main translator interface
+│   ├── parser.py          # AST-based parser
+│   ├── validator.py       # Syntax validation
+│   ├── assembler.py       # Code generation
+│   ├── models/            # Language models
+│   ├── streaming/         # Streaming support
+│   ├── integration/       # DinoAir integration
+│   ├── configs/           # Configuration profiles
+│   ├── examples/          # Example scripts and pseudocode
+│   └── tests/             # Translator tests
+├── tests/                 # Unit tests (planned)
 ├── docs/                  # Documentation
-│   ├── notes_feature.md   # Notes feature documentation
-│   └── notes_api_reference.md  # API reference
+│   ├── pseudocode_translator_user_guide.md
+│   ├── pseudocode_translator_api_reference.md
+│   └── pseudocode_translator_changelog.md
 ├── logs/                  # Application logs (auto-created)
 └── user_data/             # User-specific data (auto-created)
     └── {username}/
@@ -151,6 +165,43 @@ DinoAir 2.0 uses a multi-database approach:
 3. **User Tools Database** (`user_tools.db`): User preferences and application logs
 
 Each user gets their own isolated database environment in `user_data/{username}/databases/`.
+
+## Pseudocode Translator
+
+The integrated pseudocode translator allows you to convert natural language algorithmic descriptions into production-ready code.
+
+### Quick Start
+
+```python
+from pseudocode_translator import SimpleTranslator
+
+translator = SimpleTranslator()
+pseudocode = """
+FUNCTION calculateFactorial(n)
+    IF n <= 1 THEN
+        RETURN 1
+    ELSE
+        RETURN n * calculateFactorial(n - 1)
+    END IF
+END FUNCTION
+"""
+
+python_code = translator.translate(pseudocode, target_language="python")
+print(python_code)
+```
+
+### Features
+- Support for 14+ programming languages
+- Modern syntax including async/await, pattern matching, type hints
+- Streaming translation with progress tracking
+- Parallel file processing
+- Intelligent error recovery
+- Extensible plugin system
+
+### Documentation
+- [User Guide](docs/pseudocode_translator_user_guide.md) - Complete usage instructions
+- [API Reference](docs/pseudocode_translator_api_reference.md) - Detailed API documentation
+- [Examples](pseudocode_translator/examples/) - Working code examples
 
 ## Development
 
@@ -184,23 +235,6 @@ flake8 src/
 
 [Add your license information here]
 
-## Documentation
-
-### Feature Documentation
-- [**Notes Feature**](docs/notes_feature.md) - Comprehensive guide to the Notes feature including:
-  - User guide with all features
-  - Developer guide and architecture
-  - Security implementation details
-  - Configuration options
-  - Troubleshooting tips
-
-### API Reference
-- [**Notes API Reference**](docs/notes_api_reference.md) - Detailed API documentation for:
-  - Database operations
-  - GUI components
-  - Security modules
-  - Usage examples
-
 ## Status
 
 🚧 **Currently in Development** 🚧
@@ -210,33 +244,32 @@ flake8 src/
 - ✅ Basic GUI framework
 - ✅ Configuration system
 - ✅ Logging utilities
-- ✅ **Notes Feature** (fully implemented with rich text, tags, search, export)
-- ✅ Input processing pipeline with security
+- ✅ Pseudocode translator
+- 🔄 Input processing pipeline
 - 🔄 AI agent integration
-- ⏳ Calendar and Tasks features
-- ⏳ Advanced file management
+- ⏳ Advanced features and tools
 - ⏳ Comprehensive testing suite
 
 ## Roadmap
 
-### Phase 1: Core Foundation (Complete)
+### Phase 1: Core Foundation (Current)
 - [x] Project structure and modularity
 - [x] Database management
 - [x] Basic GUI framework
-- [x] Input processing pipeline with security
-- [x] Configuration system finalization
-- [x] Notes feature with full functionality
+- [ ] Input processing pipeline
+- [ ] Configuration system finalization
 
 ### Phase 2: AI Integration
+- [x] Pseudocode translator implementation
 - [ ] LLM wrapper implementation
 - [ ] Agent orchestration system
-- [ ] Translation services
+- [ ] Advanced translation services
 - [ ] Intent classification
 
 ### Phase 3: Advanced Features
-- [x] Advanced note organization (tags, search, filtering)
+- [ ] Advanced note organization
 - [ ] File management system
-- [x] Export/import capabilities (HTML, TXT, PDF, ZIP)
+- [ ] Export/import capabilities
 - [ ] Plugin system
 
 ### Phase 4: Polish and Testing

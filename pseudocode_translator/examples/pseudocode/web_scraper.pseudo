@@ -1,0 +1,241 @@
+# Web Scraper Example
+# This pseudocode demonstrates a simple web scraping application
+
+CREATE a WebScraper class with:
+    - base_url: string
+    - session: http session object
+    - rate_limit: delay between requests in seconds
+    - headers: dictionary of HTTP headers
+    
+    METHOD __init__(base_url, rate_limit = 1.0)
+        SET self.base_url TO base_url
+        SET self.rate_limit TO rate_limit
+        SET self.session TO create_session()
+        SET self.headers TO {
+            "User-Agent": "Mozilla/5.0 WebScraper/1.0",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+    END METHOD
+    
+    ASYNC METHOD fetch_page(url)
+        TRY
+            # Rate limiting
+            AWAIT sleep(self.rate_limit)
+            
+            # Make request
+            SET response TO AWAIT self.session.get(url, headers=self.headers)
+            
+            # Check status
+            IF response.status_code == 200 THEN
+                RETURN response.text
+            ELSE IF response.status_code == 404 THEN
+                RAISE PageNotFoundError("Page not found: " + url)
+            ELSE IF response.status_code == 429 THEN
+                # Too many requests, wait longer
+                AWAIT sleep(self.rate_limit * 5)
+                RETURN AWAIT self.fetch_page(url)  # Retry
+            ELSE
+                RAISE HTTPError("HTTP " + response.status_code + " for " + url)
+            END IF
+            
+        CATCH NetworkError as e
+            PRINT "Network error: " + str(e)
+            RETURN None
+        END TRY
+    END METHOD
+    
+    METHOD parse_html(html_content)
+        SET soup TO BeautifulSoup(html_content, "html.parser")
+        RETURN soup
+    END METHOD
+    
+    METHOD extract_links(soup, pattern = None)
+        SET links TO empty list
+        
+        FOR EACH anchor IN soup.find_all("a", href=True)
+            SET href TO anchor["href"]
+            
+            # Convert relative URLs to absolute
+            IF NOT href.startswith("http") THEN
+                SET href TO urljoin(self.base_url, href)
+            END IF
+            
+            # Apply pattern filter if provided
+            IF pattern IS None OR pattern IN href THEN
+                APPEND href TO links
+            END IF
+        END FOR
+        
+        RETURN unique(links)  # Remove duplicates
+    END METHOD
+    
+    METHOD extract_text(soup, selector = None)
+        IF selector IS NOT None THEN
+            SET elements TO soup.select(selector)
+            SET texts TO empty list
+            FOR EACH element IN elements
+                APPEND element.get_text(strip=True) TO texts
+            END FOR
+            RETURN texts
+        ELSE
+            RETURN soup.get_text(strip=True)
+        END IF
+    END METHOD
+    
+    ASYNC METHOD scrape_product_info(product_url)
+        SET html TO AWAIT self.fetch_page(product_url)
+        IF html IS None THEN
+            RETURN None
+        END IF
+        
+        SET soup TO self.parse_html(html)
+        
+        # Extract product information
+        SET product TO {
+            "url": product_url,
+            "title": self.extract_text(soup, "h1.product-title")[0],
+            "price": self.extract_text(soup, "span.price")[0],
+            "description": self.extract_text(soup, "div.description")[0],
+            "image_url": soup.select_one("img.product-image")["src"],
+            "availability": self.extract_text(soup, "span.availability")[0],
+            "rating": self.extract_rating(soup),
+            "reviews": self.extract_reviews(soup)
+        }
+        
+        RETURN product
+    END METHOD
+    
+    METHOD extract_rating(soup)
+        SET rating_element TO soup.select_one("div.rating")
+        IF rating_element IS NOT None THEN
+            SET stars TO rating_element.get("data-rating")
+            RETURN float(stars)
+        ELSE
+            RETURN None
+        END IF
+    END METHOD
+    
+    METHOD extract_reviews(soup)
+        SET reviews TO empty list
+        SET review_elements TO soup.select("div.review")
+        
+        FOR EACH review_element IN review_elements
+            SET review TO {
+                "author": self.extract_text(review_element, ".author")[0],
+                "rating": review_element.select_one(".stars")["data-rating"],
+                "text": self.extract_text(review_element, ".review-text")[0],
+                "date": self.extract_text(review_element, ".review-date")[0]
+            }
+            APPEND review TO reviews
+        END FOR
+        
+        RETURN reviews
+    END METHOD
+    
+    ASYNC METHOD scrape_category(category_url, max_pages = 10)
+        SET all_products TO empty list
+        SET page_number TO 1
+        
+        WHILE page_number <= max_pages
+            SET page_url TO category_url + "?page=" + str(page_number)
+            PRINT "Scraping page " + page_number + ": " + page_url
+            
+            SET html TO AWAIT self.fetch_page(page_url)
+            IF html IS None THEN
+                BREAK
+            END IF
+            
+            SET soup TO self.parse_html(html)
+            SET product_links TO self.extract_links(soup, "/product/")
+            
+            IF length(product_links) == 0 THEN
+                PRINT "No more products found"
+                BREAK
+            END IF
+            
+            # Scrape each product
+            FOR EACH product_link IN product_links
+                SET product_info TO AWAIT self.scrape_product_info(product_link)
+                IF product_info IS NOT None THEN
+                    APPEND product_info TO all_products
+                END IF
+            END FOR
+            
+            SET page_number TO page_number + 1
+        END WHILE
+        
+        RETURN all_products
+    END METHOD
+    
+    METHOD save_to_json(data, filename)
+        TRY
+            WITH open(filename, "w") as file
+                json.dump(data, file, indent=2)
+            END WITH
+            PRINT "Data saved to " + filename
+        CATCH IOError as e
+            PRINT "Error saving file: " + str(e)
+        END TRY
+    END METHOD
+    
+    METHOD save_to_csv(products, filename)
+        TRY
+            WITH open(filename, "w", newline="") as file
+                SET writer TO csv.DictWriter(file, fieldnames=[
+                    "title", "price", "availability", "rating", "url"
+                ])
+                writer.writeheader()
+                
+                FOR EACH product IN products
+                    writer.writerow({
+                        "title": product["title"],
+                        "price": product["price"],
+                        "availability": product["availability"],
+                        "rating": product["rating"],
+                        "url": product["url"]
+                    })
+                END FOR
+            END WITH
+            PRINT "Data saved to " + filename
+        CATCH IOError as e
+            PRINT "Error saving file: " + str(e)
+        END TRY
+    END METHOD
+END CLASS
+
+# Example usage
+ASYNC PROCEDURE main()
+    # Create scraper instance
+    SET scraper TO new WebScraper("https://example-shop.com", rate_limit=2.0)
+    
+    # Scrape a single product
+    SET product_url TO "https://example-shop.com/product/laptop-123"
+    SET product TO AWAIT scraper.scrape_product_info(product_url)
+    
+    IF product IS NOT None THEN
+        PRINT "Product: " + product["title"]
+        PRINT "Price: " + product["price"]
+        PRINT "Rating: " + str(product["rating"])
+    END IF
+    
+    # Scrape entire category
+    SET category_url TO "https://example-shop.com/category/electronics"
+    SET products TO AWAIT scraper.scrape_category(category_url, max_pages=5)
+    
+    PRINT "Scraped " + length(products) + " products"
+    
+    # Save results
+    scraper.save_to_json(products, "products.json")
+    scraper.save_to_csv(products, "products.csv")
+    
+    # Find best rated products
+    SET best_products TO filter(
+        lambda p: p["rating"] IS NOT None AND p["rating"] >= 4.5,
+        products
+    )
+    PRINT "Found " + length(best_products) + " highly rated products"
+END PROCEDURE
+
+# Run the scraper
+AWAIT main()

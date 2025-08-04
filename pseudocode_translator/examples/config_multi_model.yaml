@@ -1,0 +1,138 @@
+# Multi-model configuration for Pseudocode Translator
+# This demonstrates how to configure multiple models with specific settings
+
+llm:
+  # Primary model selection
+  model_type: qwen  # Can switch between: qwen, gpt2, codegen
+  model_path: ./models
+  
+  # Global model parameters (can be overridden per model)
+  n_ctx: 2048
+  n_batch: 512
+  n_threads: 4
+  n_gpu_layers: 0
+  
+  # Global generation parameters
+  temperature: 0.3
+  top_p: 0.9
+  top_k: 40
+  repeat_penalty: 1.1
+  max_tokens: 1024
+  
+  # Performance settings
+  cache_enabled: true
+  cache_size_mb: 1000
+  cache_ttl_hours: 48
+  
+  # Model management
+  max_loaded_models: 3  # Allow up to 3 models in memory
+  model_ttl_minutes: 120  # Keep models loaded for 2 hours
+  auto_download: true  # Automatically download missing models
+  
+  # Validation
+  timeout_seconds: 60
+  validation_level: normal
+  
+  # Model-specific configurations
+  model_configs:
+    qwen:
+      enabled: true
+      model_path: ./models/qwen-7b/qwen-7b-q4_k_m.gguf
+      auto_download: true
+      download_url: https://huggingface.co/TheBloke/Qwen-7B-Chat-GGUF/resolve/main/qwen-7b-chat.Q4_K_M.gguf
+      checksum: sha256:abc123...  # Replace with actual checksum
+      parameters:
+        temperature: 0.3
+        max_tokens: 1024
+        n_gpu_layers: 20  # Use GPU if available
+        rope_freq_base: 10000
+        rope_freq_scale: 1.0
+    
+    gpt2:
+      enabled: true
+      model_path: ./models/gpt2
+      auto_download: true
+      parameters:
+        temperature: 0.5
+        max_tokens: 512
+        device: auto  # auto, cpu, or cuda
+        use_cache: true
+        pad_token_id: 50256
+    
+    codegen:
+      enabled: true
+      model_path: ./models/codegen-350M-mono
+      auto_download: true
+      download_url: https://huggingface.co/Salesforce/codegen-350M-mono
+      parameters:
+        temperature: 0.2  # Lower temperature for code generation
+        max_tokens: 1024
+        top_p: 0.95
+        device: auto
+        torch_dtype: float16  # Use half precision for efficiency
+        trust_remote_code: true
+    
+    # Example custom model configuration
+    my_custom_model:
+      enabled: false  # Disabled by default
+      model_path: ./models/custom/model.gguf
+      auto_download: false
+      parameters:
+        temperature: 0.4
+        max_tokens: 2048
+        custom_param: value  # Model-specific parameters
+
+# Translation settings
+max_context_length: 4096  # Increased for larger models
+preserve_comments: true
+preserve_docstrings: true
+auto_import_common: true
+
+# Code style preferences
+indent_size: 4
+use_type_hints: true
+max_line_length: 100  # Slightly longer lines
+
+# Validation settings
+validate_imports: true
+check_undefined_vars: true
+allow_unsafe_operations: false
+
+# Prompt customization
+prompts:
+  system_prompt: |
+    You are an expert Python programmer with deep knowledge of software engineering best practices.
+    Generate clean, efficient, and well-documented code following PEP 8 standards.
+    Always include appropriate error handling and type hints where applicable.
+  
+  instruction_template: |
+    Task: Convert the following instruction to Python code.
+    
+    Instruction: {instruction}
+    
+    Context: {context}
+    
+    Requirements:
+    - Use descriptive variable names
+    - Add comments for complex logic
+    - Include error handling
+    - Follow PEP 8 style guide
+    
+    Python code:
+  
+  refinement_template: |
+    Fix the following Python code based on the error:
+    
+    Original code:
+    ```python
+    {code}
+    ```
+    
+    Error: {error}
+    
+    Provide the corrected code with an explanation of the fix:
+
+# GUI preferences
+gui_theme: dark
+gui_font_size: 12
+syntax_highlighting: true

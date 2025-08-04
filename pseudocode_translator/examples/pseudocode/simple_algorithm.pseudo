@@ -1,0 +1,156 @@
+# Simple Algorithm Examples
+# This file demonstrates basic algorithmic patterns in pseudocode
+
+# Example 1: Fibonacci Sequence
+FUNCTION fibonacci(n)
+    IF n <= 1 THEN
+        RETURN n
+    ELSE
+        RETURN fibonacci(n - 1) + fibonacci(n - 2)
+    END IF
+END FUNCTION
+
+# Example 2: Binary Search
+FUNCTION binary_search(array, target)
+    SET left TO 0
+    SET right TO length(array) - 1
+    
+    WHILE left <= right
+        SET middle TO (left + right) // 2
+        
+        IF array[middle] == target THEN
+            RETURN middle
+        ELSE IF array[middle] < target THEN
+            SET left TO middle + 1
+        ELSE
+            SET right TO middle - 1
+        END IF
+    END WHILE
+    
+    RETURN -1  # Not found
+END FUNCTION
+
+# Example 3: Bubble Sort
+FUNCTION bubble_sort(array)
+    SET n TO length(array)
+    
+    FOR i FROM 0 TO n - 1
+        SET swapped TO False
+        
+        FOR j FROM 0 TO n - i - 2
+            IF array[j] > array[j + 1] THEN
+                # Swap elements
+                SET temp TO array[j]
+                SET array[j] TO array[j + 1]
+                SET array[j + 1] TO temp
+                SET swapped TO True
+            END IF
+        END FOR
+        
+        # If no swapping occurred, array is sorted
+        IF NOT swapped THEN
+            BREAK
+        END IF
+    END FOR
+    
+    RETURN array
+END FUNCTION
+
+# Example 4: Factorial with Error Handling
+FUNCTION factorial(n)
+    IF n < 0 THEN
+        RAISE ValueError("Factorial is not defined for negative numbers")
+    ELSE IF n == 0 OR n == 1 THEN
+        RETURN 1
+    ELSE
+        SET result TO 1
+        FOR i FROM 2 TO n
+            SET result TO result * i
+        END FOR
+        RETURN result
+    END IF
+END FUNCTION
+
+# Example 5: Prime Number Check
+FUNCTION is_prime(n)
+    IF n <= 1 THEN
+        RETURN False
+    ELSE IF n <= 3 THEN
+        RETURN True
+    ELSE IF n % 2 == 0 OR n % 3 == 0 THEN
+        RETURN False
+    END IF
+    
+    SET i TO 5
+    WHILE i * i <= n
+        IF n % i == 0 OR n % (i + 2) == 0 THEN
+            RETURN False
+        END IF
+        SET i TO i + 6
+    END WHILE
+    
+    RETURN True
+END FUNCTION
+
+# Example 6: String Reversal
+FUNCTION reverse_string(text)
+    SET reversed TO ""
+    SET index TO length(text) - 1
+    
+    WHILE index >= 0
+        SET reversed TO reversed + text[index]
+        SET index TO index - 1
+    END WHILE
+    
+    RETURN reversed
+END FUNCTION
+
+# Example 7: Find Maximum in Array
+FUNCTION find_maximum(array)
+    IF length(array) == 0 THEN
+        RAISE ValueError("Cannot find maximum of empty array")
+    END IF
+    
+    SET maximum TO array[0]
+    
+    FOR EACH element IN array
+        IF element > maximum THEN
+            SET maximum TO element
+        END IF
+    END FOR
+    
+    RETURN maximum
+END FUNCTION
+
+# Main execution example
+PROCEDURE main()
+    # Test fibonacci
+    PRINT "Fibonacci(10) = " + fibonacci(10)
+    
+    # Test binary search
+    SET numbers TO [1, 3, 5, 7, 9, 11, 13, 15]
+    SET target TO 7
+    SET index TO binary_search(numbers, target)
+    IF index != -1 THEN
+        PRINT "Found " + target + " at index " + index
+    ELSE
+        PRINT target + " not found"
+    END IF
+    
+    # Test bubble sort
+    SET unsorted TO [64, 34, 25, 12, 22, 11, 90]
+    PRINT "Unsorted: " + unsorted
+    SET sorted TO bubble_sort(unsorted)
+    PRINT "Sorted: " + sorted
+    
+    # Test prime numbers
+    PRINT "Prime numbers up to 20:"
+    FOR num FROM 1 TO 20
+        IF is_prime(num) THEN
+            PRINT num + " "
+        END IF
+    END FOR
+END PROCEDURE
+
+# Call main procedure
+CALL main()

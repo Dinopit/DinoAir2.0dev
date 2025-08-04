@@ -1,0 +1,430 @@
+# Async Operations Example
+# This pseudocode demonstrates asynchronous programming patterns and concurrent operations
+
+CREATE an AsyncTaskManager class with:
+    - tasks: list of pending tasks
+    - max_concurrent: maximum concurrent tasks
+    - running_tasks: currently running tasks
+    - completed_tasks: completed task results
+    - failed_tasks: failed task information
+    - event_loop: async event loop
+    
+    METHOD __init__(max_concurrent = 10)
+        SET self.tasks TO empty queue
+        SET self.max_concurrent TO max_concurrent
+        SET self.running_tasks TO empty set
+        SET self.completed_tasks TO empty list
+        SET self.failed_tasks TO empty list
+        SET self.event_loop TO get_event_loop()
+    END METHOD
+    
+    ASYNC METHOD add_task(coroutine, task_id = None, priority = 0)
+        SET task TO {
+            "id": task_id OR generate_uuid(),
+            "coroutine": coroutine,
+            "priority": priority,
+            "status": "pending",
+            "created_at": current_timestamp()
+        }
+        AWAIT self.tasks.put((priority, task))
+        RETURN task["id"]
+    END METHOD
+    
+    ASYNC METHOD run_all()
+        SET workers TO []
+        
+        # Create worker tasks
+        FOR i FROM 0 TO self.max_concurrent
+            SET worker TO create_task(self._worker(f"worker-{i}"))
+            APPEND worker TO workers
+        END FOR
+        
+        # Wait for all tasks to complete
+        AWAIT self.tasks.join()
+        
+        # Cancel workers
+        FOR EACH worker IN workers
+            worker.cancel()
+        END FOR
+        
+        # Wait for workers to finish
+        AWAIT gather(*workers, return_exceptions=True)
+        
+        RETURN {
+            "completed": length(self.completed_tasks),
+            "failed": length(self.failed_tasks),
+            "total": length(self.completed_tasks) + length(self.failed_tasks)
+        }
+    END METHOD
+    
+    ASYNC METHOD _worker(worker_id)
+        WHILE True
+            TRY
+                # Get task from queue with timeout
+                SET priority, task TO AWAIT wait_for(
+                    self.tasks.get(), 
+                    timeout=1.0
+                )
+                
+                ADD task["id"] TO self.running_tasks
+                SET task["status"] TO "running"
+                SET task["started_at"] TO current_timestamp()
+                
+                PRINT f"{worker_id}: Processing task {task['id']}"
+                
+                # Execute the task
+                SET result TO AWAIT task["coroutine"]
+                
+                SET task["status"] TO "completed"
+                SET task["completed_at"] TO current_timestamp()
+                SET task["result"] TO result
+                
+                APPEND task TO self.completed_tasks
+                
+            CATCH asyncio.TimeoutError
+                # No tasks available, continue
+                CONTINUE
+                
+            CATCH asyncio.CancelledError
+                # Worker cancelled, exit
+                BREAK
+                
+            CATCH Exception as e
+                SET task["status"] TO "failed"
+                SET task["error"] TO str(e)
+                SET task["failed_at"] TO current_timestamp()
+                
+                APPEND task TO self.failed_tasks
+                PRINT f"{worker_id}: Task {task['id']} failed: {str(e)}"
+                
+            FINALLY
+                IF task["id"] IN self.running_tasks THEN
+                    REMOVE task["id"] FROM self.running_tasks
+                END IF
+                
+                # Mark task as done
+                self.tasks.task_done()
+            END TRY
+        END WHILE
+    END METHOD
+END CLASS
+
+# Async HTTP Client
+CREATE an AsyncHTTPClient class with:
+    - session: aiohttp session
+    - timeout: request timeout
+    - retry_count: number of retries
+    - rate_limiter: rate limiting mechanism
+    
+    ASYNC METHOD __init__(timeout = 30, retry_count = 3)
+        SET self.session TO aiohttp.ClientSession()
+        SET self.timeout TO timeout
+        SET self.retry_count TO retry_count
+        SET self.rate_limiter TO AsyncRateLimiter(calls=10, period=1)
+    END ASYNC METHOD
+    
+    ASYNC METHOD fetch(url, method = "GET", **kwargs)
+        AWAIT self.rate_limiter.acquire()
+        
+        FOR attempt FROM 0 TO self.retry_count
+            TRY
+                ASYNC WITH self.session.request(
+                    method, url, 
+                    timeout=self.timeout,
+                    **kwargs
+                ) as response
+                    SET data TO AWAIT response.text()
+                    RETURN {
+                        "status": response.status,
+                        "data": data,
+                        "headers": dict(response.headers)
+                    }
+                END ASYNC WITH
+                
+            CATCH aiohttp.ClientError as e
+                IF attempt == self.retry_count - 1 THEN
+                    RAISE e
+                END IF
+                
+                # Exponential backoff
+                SET wait_time TO 2 ** attempt
+                PRINT f"Request failed, retrying in {wait_time}s..."
+                AWAIT asyncio.sleep(wait_time)
+            END TRY
+        END FOR
+    END METHOD
+    
+    ASYNC METHOD fetch_multiple(urls)
+        SET tasks TO []
+        
+        FOR EACH url IN urls
+            SET task TO create_task(self.fetch(url))
+            APPEND task TO tasks
+        END FOR
+        
+        SET results TO AWAIT gather(*tasks, return_exceptions=True)
+        
+        SET successful TO []
+        SET failed TO []
+        
+        FOR i, result IN enumerate(results)
+            IF isinstance(result, Exception) THEN
+                APPEND {"url": urls[i], "error": str(result)} TO failed
+            ELSE
+                APPEND {"url": urls[i], "result": result} TO successful
+            END IF
+        END FOR
+        
+        RETURN {"successful": successful, "failed": failed}
+    END METHOD
+    
+    ASYNC METHOD close()
+        AWAIT self.session.close()
+    END METHOD
+END CLASS
+
+# Async Database Operations
+CREATE an AsyncDatabase class with:
+    - connection_pool: async connection pool
+    - max_connections: maximum pool size
+    
+    ASYNC METHOD __init__(connection_string, max_connections = 10)
+        SET self.connection_pool TO AWAIT create_pool(
+            connection_string,
+            min_size=1,
+            max_size=max_connections
+        )
+    END ASYNC METHOD
+    
+    ASYNC METHOD execute_query(query, params = None)
+        ASYNC WITH self.connection_pool.acquire() as connection
+            ASYNC WITH connection.transaction()
+                SET result TO AWAIT connection.fetch(query, *params)
+                RETURN result
+            END ASYNC WITH
+        END ASYNC WITH
+    END METHOD
+    
+    ASYNC METHOD execute_many(query, params_list)
+        ASYNC WITH self.connection_pool.acquire() as connection
+            ASYNC WITH connection.transaction()
+                FOR EACH params IN params_list
+                    AWAIT connection.execute(query, *params)
+                END FOR
+            END ASYNC WITH
+        END ASYNC WITH
+    END METHOD
+    
+    ASYNC METHOD stream_query(query, params = None, chunk_size = 1000)
+        ASYNC WITH self.connection_pool.acquire() as connection
+            ASYNC WITH connection.transaction()
+                SET cursor TO AWAIT connection.cursor(query, *params)
+                
+                WHILE True
+                    SET rows TO AWAIT cursor.fetch(chunk_size)
+                    IF NOT rows THEN
+                        BREAK
+                    END IF
+                    
+                    YIELD rows
+                END WHILE
+            END ASYNC WITH
+        END ASYNC WITH
+    END METHOD
+END CLASS
+
+# Async Rate Limiter
+CREATE an AsyncRateLimiter class with:
+    - calls: allowed calls
+    - period: time period in seconds
+    - semaphore: async semaphore
+    - timestamps: call timestamps
+    
+    METHOD __init__(calls, period)
+        SET self.calls TO calls
+        SET self.period TO period
+        SET self.semaphore TO asyncio.Semaphore(calls)
+        SET self.timestamps TO deque()
+    END METHOD
+    
+    ASYNC METHOD acquire()
+        AWAIT self.semaphore.acquire()
+        
+        SET now TO current_time()
+        
+        # Remove old timestamps
+        WHILE self.timestamps AND self.timestamps[0] < now - self.period
+            self.timestamps.popleft()
+        END WHILE
+        
+        # Check if we need to wait
+        IF length(self.timestamps) >= self.calls THEN
+            SET sleep_time TO self.period - (now - self.timestamps[0])
+            AWAIT asyncio.sleep(sleep_time)
+        END IF
+        
+        self.timestamps.append(current_time())
+        self.semaphore.release()
+    END METHOD
+END CLASS
+
+# Async Event Processing
+CREATE an AsyncEventProcessor class with:
+    - event_queue: async queue for events
+    - handlers: event handlers mapping
+    - workers: number of worker tasks
+    
+    METHOD __init__(workers = 5)
+        SET self.event_queue TO asyncio.Queue()
+        SET self.handlers TO {}
+        SET self.workers TO workers
+        SET self.running TO False
+    END METHOD
+    
+    METHOD register_handler(event_type, handler)
+        IF event_type NOT IN self.handlers THEN
+            SET self.handlers[event_type] TO []
+        END IF
+        APPEND handler TO self.handlers[event_type]
+    END METHOD
+    
+    ASYNC METHOD emit(event_type, data)
+        SET event TO {
+            "type": event_type,
+            "data": data,
+            "timestamp": current_timestamp()
+        }
+        AWAIT self.event_queue.put(event)
+    END METHOD
+    
+    ASYNC METHOD start()
+        SET self.running TO True
+        SET tasks TO []
+        
+        FOR i FROM 0 TO self.workers
+            SET task TO create_task(self._process_events())
+            APPEND task TO tasks
+        END FOR
+        
+        AWAIT gather(*tasks)
+    END METHOD
+    
+    ASYNC METHOD _process_events()
+        WHILE self.running
+            TRY
+                SET event TO AWAIT wait_for(
+                    self.event_queue.get(),
+                    timeout=1.0
+                )
+                
+                IF event["type"] IN self.handlers THEN
+                    FOR EACH handler IN self.handlers[event["type"]]
+                        TRY
+                            AWAIT handler(event["data"])
+                        CATCH Exception as e
+                            PRINT f"Handler error: {str(e)}"
+                        END TRY
+                    END FOR
+                END IF
+                
+            CATCH asyncio.TimeoutError
+                CONTINUE
+            END TRY
+        END WHILE
+    END METHOD
+    
+    ASYNC METHOD stop()
+        SET self.running TO False
+    END METHOD
+END CLASS
+
+# Example usage
+ASYNC PROCEDURE main()
+    # Example 1: Task Manager
+    SET task_manager TO new AsyncTaskManager(max_concurrent=5)
+    
+    # Add various async tasks
+    FOR i FROM 0 TO 20
+        AWAIT task_manager.add_task(
+            async_task(f"Task-{i}", delay=random(1, 5)),
+            priority=random(1, 10)
+        )
+    END FOR
+    
+    SET results TO AWAIT task_manager.run_all()
+    PRINT f"Completed: {results['completed']}, Failed: {results['failed']}"
+    
+    # Example 2: HTTP Client
+    SET http_client TO AWAIT AsyncHTTPClient()
+    
+    SET urls TO [
+        "https://api.example.com/users/1",
+        "https://api.example.com/users/2",
+        "https://api.example.com/users/3"
+    ]
+    
+    SET fetch_results TO AWAIT http_client.fetch_multiple(urls)
+    PRINT f"Successful requests: {length(fetch_results['successful'])}"
+    PRINT f"Failed requests: {length(fetch_results['failed'])}"
+    
+    AWAIT http_client.close()
+    
+    # Example 3: Database Operations
+    SET db TO AWAIT AsyncDatabase("postgresql://localhost/mydb")
+    
+    # Stream large result set
+    ASYNC FOR chunk IN db.stream_query("SELECT * FROM large_table")
+        PRINT f"Processing chunk of {length(chunk)} rows"
+        # Process chunk asynchronously
+        AWAIT process_chunk(chunk)
+    END ASYNC FOR
+    
+    # Example 4: Event Processing
+    SET event_processor TO new AsyncEventProcessor()
+    
+    # Register handlers
+    event_processor.register_handler("user_login", handle_login)
+    event_processor.register_handler("user_logout", handle_logout)
+    event_processor.register_handler("error", handle_error)
+    
+    # Start processing in background
+    SET processor_task TO create_task(event_processor.start())
+    
+    # Emit events
+    AWAIT event_processor.emit("user_login", {"user_id": 123})
+    AWAIT event_processor.emit("user_logout", {"user_id": 123})
+    
+    # Wait a bit then stop
+    AWAIT asyncio.sleep(5)
+    AWAIT event_processor.stop()
+    AWAIT processor_task
+END ASYNC PROCEDURE
+
+# Helper async functions
+ASYNC FUNCTION async_task(name, delay)
+    PRINT f"{name}: Starting (delay={delay}s)"
+    AWAIT asyncio.sleep(delay)
+    PRINT f"{name}: Completed"
+    RETURN f"{name} result"
+END ASYNC FUNCTION
+
+ASYNC FUNCTION handle_login(data)
+    PRINT f"User {data['user_id']} logged in"
+    # Perform async login operations
+    AWAIT update_user_status(data['user_id'], "online")
+END ASYNC FUNCTION
+
+ASYNC FUNCTION handle_logout(data)
+    PRINT f"User {data['user_id']} logged out"
+    # Perform async logout operations
+    AWAIT update_user_status(data['user_id'], "offline")
+END ASYNC FUNCTION
+
+ASYNC FUNCTION handle_error(data)
+    PRINT f"Error occurred: {data}"
+    # Log error asynchronously
+    AWAIT log_error(data)
+END ASYNC FUNCTION
+
+# Run the async main function
+AWAIT main()

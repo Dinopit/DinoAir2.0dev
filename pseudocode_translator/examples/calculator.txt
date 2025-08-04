@@ -1,0 +1,15 @@
+Create a Calculator class that:
+- has a result attribute that starts at 0
+- has an add method that adds a number to result
+- has a subtract method that subtracts a number from result
+- has a multiply method that multiplies result by a number
+- has a divide method that divides result by a number
+  - if dividing by zero, raise ValueError with message "Cannot divide by zero"
+- has a clear method that resets result to 0
+- has a get_result method that returns the current result
+- has a calculate method that takes a string expression like "2 + 3 * 4"
+  - parse and evaluate the expression
+  - support +, -, *, / operators
+  - follow order of operations (multiplication/division before addition/subtraction)
+  - update result with the calculated value
+  - return the calculated value

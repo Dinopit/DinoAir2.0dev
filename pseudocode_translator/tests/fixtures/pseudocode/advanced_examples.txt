@@ -1,0 +1,100 @@
+# Object-Oriented Programming Example
+Create a BankAccount class
+Initialize with account number and initial balance
+Add a deposit method that adds money to balance
+Add a withdraw method that:
+  - Checks if sufficient funds are available
+  - Deducts amount if possible
+  - Returns success/failure status
+Add a get_balance method
+Add a transfer method to transfer money to another account
+
+# Data Processing Pipeline
+Import pandas and numpy
+
+Create a DataPipeline class:
+  Initialize with input file path
+  
+  Add load_data method:
+    Read CSV file into dataframe
+    Log number of rows loaded
+    Return dataframe
+  
+  Add clean_data method:
+    Remove duplicate rows
+    Fill missing values with appropriate defaults
+    Convert date columns to datetime
+    Remove outliers using IQR method
+    
+  Add transform_data method:
+    Create new calculated columns
+    Aggregate data by category
+    Normalize numeric columns
+    
+  Add save_results method:
+    Save processed data to CSV
+    Generate summary statistics
+    Create basic visualizations
+
+# Async Web Scraper
+Import asyncio, aiohttp, and BeautifulSoup
+
+Create an AsyncScraper class:
+  Initialize with base URL and rate limit
+  
+  Add async fetch_page method:
+    Make async HTTP request
+    Handle errors and retries
+    Return page content
+    
+  Add parse_content method:
+    Extract title, description, and links
+    Clean and normalize text
+    Return structured data
+    
+  Add async scrape_multiple method:
+    Take list of URLs
+    Create tasks for concurrent fetching
+    Respect rate limit
+    Collect and return all results
+    
+  Add save_to_database method:
+    Connect to database
+    Insert scraped data
+    Handle duplicates
+
+# Machine Learning Model
+Import sklearn modules, pandas, and numpy
+
+Create a PredictiveModel class:
+  Initialize with model type and parameters
+  
+  Add load_and_prepare_data method:
+    Load training data
+    Split features and target
+    Handle categorical variables
+    Scale numeric features
+    Split into train/test sets
+    
+  Add train_model method:
+    Create model instance
+    Perform cross-validation
+    Train on full training set
+    Log performance metrics
+    
+  Add evaluate_model method:
+    Make predictions on test set
+    Calculate accuracy, precision, recall
+    Generate confusion matrix
+    Create ROC curve
+    
+  Add predict method:
+    Accept new data
+    Preprocess using same pipeline
+    Make predictions
+    Return predictions with confidence scores
+    
+  Add save_model method:
+    Serialize model and preprocessor
+    Save to specified path
+    Save model metadata

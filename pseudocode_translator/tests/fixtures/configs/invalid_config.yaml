@@ -1,0 +1,16 @@
+_version: '3.0'
+
+# Invalid config - missing required fields and wrong types
+llm:
+  temperature: 'hot'  # Should be float
+  # Missing model_type, model_path, and other required fields
+
+streaming:
+  enabled: 'yes'  # Should be boolean
+  chunk_size: 'large'  # Should be integer
+
+# Invalid values
+validator:
+  max_complexity: -5  # Should be positive
+  
+# Missing entire sections (parser, assembler, etc.)

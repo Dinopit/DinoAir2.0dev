@@ -22,6 +22,7 @@ from ..pages.appointments_page import AppointmentsPage
 from ..pages.artifacts_page import ArtifactsPage
 from ..pages.file_search_page import FileSearchPage
 from ..pages.tasks_page import ProjectsPage as TasksPage
+from ..pages.pseudocode_page import PseudocodePage
 from src.input_processing.input_sanitizer import (
     InputPipeline, InputPipelineError
 )
@@ -191,6 +192,9 @@ class TabbedContentWidget(QWidget):
             elif tab['id'] == 'project':
                 # Create the projects page (using TasksPage)
                 tab_content = TasksPage()
+            elif tab['id'] == 'pseudocode':
+                # Create the pseudocode translator page
+                tab_content = PseudocodePage()
             else:
                 # Create regular tab content
                 tab_content = TabContentWidget(tab['label'])

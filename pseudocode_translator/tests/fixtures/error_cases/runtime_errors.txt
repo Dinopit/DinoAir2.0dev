@@ -1,0 +1,59 @@
+# Undefined Variable Errors
+def use_undefined():
+    print(undefined_variable)
+    return result  # result is not defined
+
+# Import Errors
+from non_existent_module import something
+import fake_package.fake_module
+
+# Type Errors
+def type_error_example():
+    x = "string"
+    y = 5
+    return x + y  # Can't add string and int
+
+# Attribute Errors
+def attribute_error():
+    lst = [1, 2, 3]
+    lst.undefined_method()  # Lists don't have this method
+
+# Index Errors
+def index_error():
+    lst = [1, 2, 3]
+    return lst[10]  # Index out of range
+
+# Key Errors
+def key_error():
+    data = {'a': 1, 'b': 2}
+    return data['c']  # Key doesn't exist
+
+# Division by Zero
+def divide_by_zero(x):
+    return x / 0
+
+# Recursion Error
+def infinite_recursion():
+    return infinite_recursion()
+
+# Name Shadowing Issues
+def shadow_builtin():
+    list = [1, 2, 3]  # Shadows built-in list
+    new_list = list([4, 5, 6])  # Will fail
+
+# Circular Import (conceptual)
+# In module_a.py: from module_b import func_b
+# In module_b.py: from module_a import func_a
+
+# Missing Required Arguments
+def requires_args(x, y, z):
+    return x + y + z
+
+# Calling: requires_args(1)  # Missing y and z
+
+# Mutable Default Arguments
+def mutable_default(items=[]):
+    items.append(1)
+    return items
+
+# Multiple calls will share same list

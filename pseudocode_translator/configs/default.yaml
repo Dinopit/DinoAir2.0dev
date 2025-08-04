@@ -1,0 +1,118 @@
+# Default configuration for Pseudocode Translator
+# This configuration provides sensible defaults for most use cases
+
+# Language Model Configuration
+llm:
+  # Primary model to use
+  model_type: qwen
+  
+  # Base directory for all models
+  model_path: ./models
+  
+  # Default model file (for backward compatibility)
+  model_file: qwen-7b-q4_k_m.gguf
+  
+  # Model loading parameters
+  n_ctx: 2048          # Context window size
+  n_batch: 512         # Batch size for prompt processing
+  n_threads: 4         # Number of CPU threads
+  n_gpu_layers: 0      # GPU layers (0 = CPU only)
+  
+  # Generation parameters
+  temperature: 0.3     # Lower = more deterministic
+  top_p: 0.9          # Nucleus sampling threshold
+  top_k: 40           # Top-k sampling
+  repeat_penalty: 1.1  # Repetition penalty
+  max_tokens: 1024    # Maximum tokens to generate
+  
+  # Performance settings
+  cache_enabled: true
+  cache_size_mb: 500
+  cache_ttl_hours: 24
+  
+  # Model management
+  auto_download: false  # Auto-download models if not found
+  max_loaded_models: 1  # Max models in memory
+  model_ttl_minutes: 60 # Unload after inactivity
+  
+  # Validation level
+  validation_level: strict
+  
+  # Timeout for generation
+  timeout_seconds: 30
+  
+  # Model-specific configurations
+  model_configs:
+    qwen:
+      name: qwen
+      enabled: true
+      parameters:
+        temperature: 0.3
+        max_tokens: 1024
+    
+    gpt2:
+      name: gpt2
+      enabled: false
+      auto_download: true
+      parameters:
+        temperature: 0.5
+        max_tokens: 512
+
+# Streaming Configuration
+streaming:
+  # Enable streaming for large files
+  enable_streaming: true
+  
+  # Auto-enable for files above this size (100KB)
+  auto_enable_threshold: 102400
+  
+  # Chunk settings
+  chunk_size: 4096          # Default chunk size in bytes
+  max_chunk_size: 8192      # Maximum chunk size
+  min_chunk_size: 512       # Minimum chunk size
+  overlap_size: 256         # Overlap between chunks
+  respect_boundaries: true  # Respect code boundaries
+  max_lines_per_chunk: 100  # Max lines per chunk
+  
+  # Memory settings
+  max_memory_mb: 100        # Max memory for buffering
+  buffer_compression: true  # Enable compression
+  eviction_policy: lru      # Buffer eviction policy
+  
+  # Pipeline settings
+  max_concurrent_chunks: 3  # Max concurrent chunks
+  chunk_timeout: 30.0       # Timeout per chunk
+  enable_backpressure: true # Handle backpressure
+  max_queue_size: 10        # Max queue size
+  
+  # Progress and monitoring
+  progress_callback_interval: 0.5  # Progress updates
+  enable_memory_monitoring: true   # Monitor memory
+  
+  # Context management
+  maintain_context_window: true    # Keep context
+  context_window_size: 1024        # Context size
+
+# Translation Settings
+max_context_length: 2048
+preserve_comments: true
+preserve_docstrings: true
+auto_import_common: true
+
+# Code Style Preferences
+indent_size: 4
+use_type_hints: true
+max_line_length: 88  # Black's default
+
+# Validation Settings
+validate_imports: true
+check_undefined_vars: true
+allow_unsafe_operations: false
+
+# GUI Preferences
+gui_theme: dark
+gui_font_size: 12
+syntax_highlighting: true
+
+# Configuration version (do not modify)
+_version: "2.0"

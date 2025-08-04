@@ -1,3 +1,6 @@
+# Temporary extraction folders
+DinoAir2.0dev-extracted/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -176,3 +179,50 @@ logs/
 
 # Config files that may contain sensitive data
 config/window_state.json
+
+# Temporary files and directories
+temp/
+*.tmp
+*.temp
+*.swp
+*~
+
+# Test and debug directories (organized)
+tests/debug/
+tests/.pytest_cache/
+
+# Development and debugging files
+debug_*.py
+diagnose_*.py
+verify_*.py
+check_*.py
+find_*.py
+fix_*.py
+stress_test_*.py
+demo_*.py
+watchdog_fix.py
+index_with_embeddings.py
+
+# Development artifacts
+recent_chats
+*.patches
+*.patch
+*.diff
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Development notes and guides
+Project\ directory\ guide.txt
+GUI_INTEGRATION_SUMMARY.md
+RAG_INDEXING_FIX_SUMMARY.md
+*diagram.png
+*photo.png
+
+# PyQt/PySide cache
+.qt_for_python/
+
+# Jupyter notebook checkpoints in any subdirectory
+**/.ipynb_checkpoints/

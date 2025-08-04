@@ -1,0 +1,161 @@
+# Advanced configuration for Pseudocode Translator
+# This configuration demonstrates all available options with documentation
+
+# Language Model Configuration
+llm:
+  # Primary model to use
+  # Options: qwen, gpt2, codegen, or any custom model
+  model_type: qwen
+  
+  # Base directory for all models
+  # Can be absolute or relative path
+  model_path: ./models
+  
+  # Default model file (for backward compatibility)
+  # Used when model_type is 'qwen' and no specific path is configured
+  model_file: qwen-7b-q4_k_m.gguf
+  
+  # Model loading parameters
+  # These apply to all models unless overridden in model_configs
+  n_ctx: 4096          # Context window size (512-32768)
+  n_batch: 1024        # Batch size for prompt processing (1-2048)
+  n_threads: 8         # Number of CPU threads (1-32)
+  n_gpu_layers: 20     # GPU layers to offload (0=CPU only, up to 100)
+  
+  # Generation parameters
+  # Control the quality and style of generated code
+  temperature: 0.2     # Sampling temperature (0.0-2.0, lower=more deterministic)
+  top_p: 0.95         # Nucleus sampling threshold (0.0-1.0)
+  top_k: 50           # Top-k sampling (0=disabled, up to 200)
+  repeat_penalty: 1.15 # Repetition penalty (0.1-2.0)
+  max_tokens: 2048    # Maximum tokens to generate (1-32768)
+  
+  # Performance settings
+  cache_enabled: true  # Enable caching of model responses
+  cache_size_mb: 1000  # Maximum cache size in MB (0=unlimited)
+  cache_ttl_hours: 48  # Cache time-to-live in hours (0=no expiration)
+  
+  # Model management
+  auto_download: true  # Automatically download models if not found
+  max_loaded_models: 2 # Maximum models to keep in memory simultaneously
+  model_ttl_minutes: 120 # Unload models after N minutes of inactivity (0=never)
+  
+  # Validation and safety
+  validation_level: normal  # Options: strict, normal, lenient
+  
+  # Timeout settings
+  timeout_seconds: 60  # Generation timeout in seconds (1-600)
+  
+  # Available models list (populated at runtime)
+  # This is automatically filled from the model registry
+  available_models: []
+  
+  # Model-specific configurations
+  # Each model can have its own parameters that override defaults
+  model_configs:
+    qwen:
+      name: qwen
+      enabled: true
+      # Optional: Override default model path
+      # model_path: /custom/path/to/qwen.gguf
+      parameters:
+        temperature: 0.3
+        max_tokens: 1024
+        n_ctx: 2048
+      # Download settings (if auto_download is enabled)
+      auto_download: false
+      # download_url: https://example.com/models/qwen.gguf
+      # checksum: sha256_hash_here
+    
+    gpt2:
+      name: gpt2
+      enabled: true
+      auto_download: true
+      parameters:
+        temperature: 0.5
+        max_tokens: 512
+        top_p: 0.9
+    
+    codegen:
+      name: codegen
+      enabled: true
+      auto_download: true
+      parameters:
+        temperature: 0.2
+        max_tokens: 2048
+        top_p: 0.95
+        repeat_penalty: 1.2
+
+# Streaming Configuration
+# For processing large files efficiently
+streaming:
+  # Enable streaming for large files
+  enable_streaming: true
+  
+  # Automatically enable streaming for files above this size (bytes)
+  auto_enable_threshold: 51200  # 50KB
+  
+  # Chunk settings
+  chunk_size: 8192           # Default chunk size in bytes
+  max_chunk_size: 16384      # Maximum chunk size
+  min_chunk_size: 1024       # Minimum chunk size
+  overlap_size: 512          # Overlap between chunks for context
+  respect_boundaries: true   # Respect code boundaries when chunking
+  max_lines_per_chunk: 200   # Maximum lines per chunk
+  
+  # Memory settings
+  max_memory_mb: 200         # Maximum memory for buffering
+  buffer_compression: true   # Enable buffer compression
+  eviction_policy: lru       # Buffer eviction policy (lru or fifo)
+  
+  # Pipeline settings
+  max_concurrent_chunks: 5   # Maximum chunks processed concurrently
+  chunk_timeout: 60.0        # Timeout per chunk in seconds
+  enable_backpressure: true  # Handle backpressure in pipeline
+  max_queue_size: 20         # Maximum queue size for chunks
+  
+  # Progress and monitoring
+  progress_callback_interval: 0.25  # Progress update interval (seconds)
+  enable_memory_monitoring: true    # Monitor memory usage during streaming
+  
+  # Context management
+  maintain_context_window: true     # Maintain context between chunks
+  context_window_size: 2048         # Context window size in characters
+
+# Translation Settings
+# Control how pseudocode is translated to Python
+max_context_length: 4096    # Maximum context for translation
+preserve_comments: true     # Keep comments from pseudocode
+preserve_docstrings: true   # Keep docstrings from pseudocode
+auto_import_common: true    # Auto-import common modules (os, sys, etc.)
+
+# Code Style Preferences
+# Control the style of generated Python code
+indent_size: 4              # Indentation size in spaces
+use_type_hints: true        # Include type hints in generated code
+max_line_length: 100        # Maximum line length (PEP 8 is 79)
+
+# Validation Settings
+# Control code validation and safety checks
+validate_imports: true      # Check that imports are valid
+check_undefined_vars: true  # Check for undefined variables
+allow_unsafe_operations: false  # Allow eval, exec, etc.
+
+# GUI Preferences
+# Settings for the graphical interface
+gui_theme: dark             # Options: dark, light, auto
+gui_font_size: 14           # Font size in points
+syntax_highlighting: true   # Enable syntax highlighting
+
+# Environment Variable Override Examples:
+# You can override any setting using environment variables:
+# PSEUDOCODE_TRANSLATOR_LLM_MODEL_TYPE=gpt2
+# PSEUDOCODE_TRANSLATOR_LLM_TEMPERATURE=0.5
+# PSEUDOCODE_TRANSLATOR_LLM_N_THREADS=16
+# PSEUDOCODE_TRANSLATOR_STREAMING_ENABLE=false
+# PSEUDOCODE_TRANSLATOR_STREAMING_CHUNK_SIZE=16384
+# PSEUDOCODE_TRANSLATOR_VALIDATE_IMPORTS=false
+# PSEUDOCODE_TRANSLATOR_CHECK_UNDEFINED_VARS=false
+
+# Configuration version (do not modify)
+_version: "2.0"

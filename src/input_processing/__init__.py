@@ -3,25 +3,35 @@ Input Processing Package - Input sanitization and processing
 Handles validation, escaping, profanity filtering, and intent classification
 """
 
-from .input_sanitizer import (
-    InputPipeline,
-    Intent,
-    InputPipelineError,
+from .input_sanitizer import InputSanitizer, InputPipeline, Intent, IntentType
+from .stages import (
+    InputValidator,
+    TextEscaper,
+    PatternNormalizer,
     ProfanityFilter,
+    IntentClassifier,
+    ThreatLevel,
+    Severity,
     RateLimiter,
-    ContextManager,
-    GUIFeedback
+    RateLimitConfig,
+    RateLimitStrategy,
+    EnhancedInputSanitizer
 )
 
-from .stages.escaping import TextEscaper
-
 __all__ = [
+    'InputSanitizer',
     'InputPipeline',
     'Intent',
-    'InputPipelineError',
-    'ProfanityFilter',
-    'RateLimiter',
-    'ContextManager',
+    'IntentType',
+    'InputValidator',
     'TextEscaper',
-    'GUIFeedback'
+    'PatternNormalizer',
+    'ProfanityFilter',
+    'IntentClassifier',
+    'ThreatLevel',
+    'Severity',
+    'RateLimiter',
+    'RateLimitConfig',
+    'RateLimitStrategy',
+    'EnhancedInputSanitizer'
 ]

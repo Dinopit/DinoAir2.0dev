@@ -1,0 +1,16 @@
+create a function called greet that:
+- takes a name parameter with default value "World"
+- returns a greeting string "Hello, {name}!"
+
+create a function called greet_multiple that:
+- takes a list of names as parameter
+- for each name in the list, print the greeting using the greet function
+- if the list is empty, print "No one to greet!"
+
+create a main function that:
+- creates a list of names: ["Alice", "Bob", "Charlie"]
+- calls greet_multiple with the list
+- then calls greet with no arguments to show default behavior
+- prints the result
+
+if this is the main module, call the main function

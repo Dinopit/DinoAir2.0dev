@@ -1,0 +1,64 @@
+Create a DataProcessor class for analyzing CSV data:
+
+__init__ method that:
+- takes a file_path parameter
+- loads the CSV data into a pandas DataFrame
+- stores the DataFrame as self.data
+- handles FileNotFoundError and returns empty DataFrame
+
+clean_data method that:
+- removes duplicate rows
+- drops rows where all values are missing
+- fills missing numeric values with the column mean
+- fills missing string values with "Unknown"
+- converts date columns to datetime format
+- returns the cleaned DataFrame
+
+analyze_numeric_columns method that:
+- identifies all numeric columns
+- for each numeric column, calculate:
+  - mean, median, standard deviation
+  - min and max values
+  - count of missing values
+- returns a dictionary with column names as keys and stats as values
+
+find_correlations method that:
+- calculates correlation matrix for numeric columns
+- finds all correlations above a threshold (default 0.7)
+- returns list of tuples: (column1, column2, correlation_value)
+- excludes self-correlations (column with itself)
+
+generate_summary_report method that:
+- creates a report dictionary containing:
+  - total number of rows and columns
+  - list of column names and their data types
+  - number of duplicate rows found
+  - percentage of missing values per column
+  - basic statistics for numeric columns
+  - strong correlations found
+- returns the report as a formatted string
+
+export_cleaned_data method that:
+- takes output_path parameter
+- saves the cleaned data to CSV
+- includes option to include index (default False)
+- creates output directory if it doesn't exist
+- returns True if successful, False otherwise
+
+visualize_distributions method that:
+- creates histogram plots for all numeric columns
+- uses matplotlib to create subplots
+- adjusts layout to prevent overlap
+- saves the figure to a file
+- shows the plot if show parameter is True
+
+process_and_analyze method that:
+- orchestrates the full pipeline:
+  1. cleans the data
+  2. generates summary report
+  3. finds correlations
+  4. creates visualizations
+  5. exports cleaned data
+- prints progress messages for each step
+- handles any errors gracefully
+- returns a success status and summary message

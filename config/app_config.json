@@ -44,44 +44,34 @@
         "log_to_file": true,
         "log_to_console": true
     },
-    "notes": {
-        "auto_save": {
-            "enabled": true,
-            "interval_seconds": 2,
-            "conflict_check_interval_seconds": 5,
-            "show_save_status": true,
-            "save_on_blur": true,
-            "min_content_length": 1,
-            "require_title_for_new_notes": true
-        },
-        "editor": {
-            "default_font_size": 14,
-            "spell_check": true,
-            "word_wrap": true,
-            "show_line_numbers": false,
-            "show_word_count": true
-        },
-        "search": {
-            "case_sensitive": false,
-            "highlight_matches": true,
-            "max_results": 100
-        }
-    },
-    "watchdog": {
+    "pseudocode_translator": {
         "enabled": true,
-        "vram_threshold_percent": 80.0,
-        "max_dinoair_processes": 5,
-        "check_interval_seconds": 10,
-        "self_terminate_on_critical": false,
-        "store_metrics": true,
-        "metrics_retention_days": 7,
-        "metrics_buffer_size": 10
-    },
-    "scaling": {
-        "enable_high_dpi": true,
-        "user_zoom_level": 1.0,
-        "minimum_font_size": 10,
-        "maximum_font_size": 24,
-        "remember_window_state": true
+        "model": "qwen",
+        "model_path": "./models",
+        "temperature": 0.3,
+        "max_tokens": 1024,
+        "default_language": "python",
+        "streaming_enabled": true,
+        "streaming_threshold": 50000,
+        "cache_enabled": true,
+        "auto_warmup": true,
+        "supported_languages": [
+            "python",
+            "javascript",
+            "typescript",
+            "java",
+            "cpp",
+            "csharp",
+            "go",
+            "rust",
+            "ruby",
+            "php"
+        ],
+        "ui_settings": {
+            "show_progress": true,
+            "show_warnings": true,
+            "auto_format_code": true,
+            "syntax_highlighting": true
+        }
     }
 }

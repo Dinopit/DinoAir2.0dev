@@ -1,0 +1,97 @@
+_version: '3.0'
+
+llm:
+  model_type: qwen
+  model_path: models/qwen-7b.gguf
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 40
+  max_tokens: 2048
+  n_ctx: 4096
+  n_batch: 512
+  n_threads: 4
+  n_gpu_layers: 20
+  models:
+    qwen:
+      enabled: true
+      name: qwen
+      path: models/qwen-7b.gguf
+      config: {}
+    gpt:
+      enabled: false
+      name: gpt
+      path: models/gpt-model.gguf
+      config: {}
+
+streaming:
+  enabled: true
+  chunk_size: 4096
+  overlap_size: 200
+  min_chunk_size: 1000
+  max_chunks: 10
+  parallel_chunks: false
+  memory_limit_mb: 1000
+
+parser:
+  min_confidence: 0.3
+  context_lines: 5
+  max_block_size: 1000
+  merge_small_blocks: true
+  preserve_empty_lines: false
+
+assembler:
+  indent_size: 4
+  max_line_length: 88
+  preserve_comments: true
+  preserve_docstrings: true
+  organize_imports: true
+  auto_import_common: true
+  fix_indentation: true
+  ensure_final_newline: true
+
+validator:
+  check_syntax: true
+  check_undefined_vars: true
+  check_unused_imports: true
+  check_style: false
+  max_complexity: 15
+  forbidden_patterns: []
+
+error_handling:
+  max_retries: 3
+  retry_delay: 1.0
+  fallback_to_basic: true
+  collect_diagnostics: true
+  error_recovery: true
+
+performance:
+  enable_caching: true
+  cache_ttl: 3600
+  max_cache_size_mb: 500
+  enable_parallel: true
+  batch_size: 10
+  profile_enabled: false
+
+output:
+  default_language: python
+  include_comments: true
+  include_docstrings: true
+  include_type_hints: true
+  follow_conventions: true
+
+advanced:
+  enable_plugins: true
+  plugin_directory: plugins
+  enable_telemetry: false
+  debug_mode: false
+  log_level: INFO
+
+# Top-level compatibility fields
+validate_imports: true
+check_undefined_vars: true
+allow_unsafe_operations: false
+indent_size: 4
+max_line_length: 88
+preserve_comments: true
+preserve_docstrings: true
+auto_import_common: true

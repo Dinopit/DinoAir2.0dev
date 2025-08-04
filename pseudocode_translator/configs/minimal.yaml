@@ -1,0 +1,9 @@
+# Minimal configuration for Pseudocode Translator
+# This configuration contains only the essential settings
+
+# Language Model Configuration
+llm:
+  model_type: qwen
+  model_path: ./models
+
+# That's it! All other settings will use defaults
