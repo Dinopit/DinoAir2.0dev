@@ -1,0 +1,304 @@
+{
+  "monitoring": {
+    "enabled": true,
+    "retention_hours": 24,
+    "cleanup_interval_seconds": 3600,
+    "performance_tracking": {
+      "enabled": true,
+      "track_duration": true,
+      "track_memory": true,
+      "track_cpu": true,
+      "percentiles": [50, 90, 95, 99]
+    },
+    "error_tracking": {
+      "enabled": true,
+      "categorize_errors": true,
+      "max_error_samples": 10,
+      "capture_stack_trace": true
+    },
+    "metrics": {
+      "enabled": true,
+      "export_format": "prometheus",
+      "export_interval_seconds": 60,
+      "custom_metrics": {
+        "tool_usage_count": {
+          "type": "counter",
+          "description": "Total number of tool executions"
+        },
+        "tool_success_rate": {
+          "type": "gauge",
+          "description": "Success rate of tool executions"
+        },
+        "tool_response_time": {
+          "type": "histogram",
+          "description": "Response time distribution",
+          "buckets": [0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
+        }
+      }
+    }
+  },
+  "telemetry": {
+    "enabled": true,
+    "tracing": {
+      "enabled": true,
+      "sample_rate": 1.0,
+      "max_trace_duration_seconds": 300,
+      "export_format": "jaeger",
+      "jaeger_endpoint": "http://localhost:14268/api/traces",
+      "zipkin_endpoint": "http://localhost:9411/api/v2/spans"
+    },
+    "events": {
+      "enabled": true,
+      "log_level": "info",
+      "max_events_per_tool": 1000,
+      "event_categories": [
+        "tool_execution",
+        "tool_error",
+        "tool_initialization",
+        "tool_cleanup",
+        "parameter_validation",
+        "policy_enforcement"
+      ]
+    },
+    "context_propagation": {
+      "enabled": true,
+      "headers": ["X-Trace-ID", "X-Span-ID", "X-Parent-Span-ID"]
+    }
+  },
+  "analytics": {
+    "enabled": true,
+    "trend_analysis": {
+      "enabled": true,
+      "window_size_hours": 24,
+      "minimum_data_points": 10,
+      "trend_threshold_percentage": 10
+    },
+    "anomaly_detection": {
+      "enabled": true,
+      "methods": ["statistical", "ml_based"],
+      "sensitivity": "medium",
+      "thresholds": {
+        "performance_degradation": 2.0,
+        "error_rate_spike": 0.2,
+        "usage_pattern_deviation": 3.0
+      }
+    },
+    "reporting": {
+      "enabled": true,
+      "report_interval_hours": 24,
+      "report_format": "json",
+      "include_recommendations": true,
+      "email_notifications": {
+        "enabled": false,
+        "recipients": [],
+        "smtp_server": "",
+        "smtp_port": 587
+      }
+    },
+    "insights": {
+      "enabled": true,
+      "reliability_weight": 0.4,
+      "performance_weight": 0.3,
+      "usage_weight": 0.3,
+      "minimum_executions": 10
+    }
+  },
+  "health_monitoring": {
+    "enabled": true,
+    "check_interval_seconds": 60,
+    "auto_checks": true,
+    "health_checks": {
+      "liveness": {
+        "enabled": true,
+        "timeout_seconds": 5,
+        "failure_threshold": 3
+      },
+      "readiness": {
+        "enabled": true,
+        "timeout_seconds": 10,
+        "include_dependencies": true
+      },
+      "dependencies": {
+        "enabled": true,
+        "check_external_services": true,
+        "check_packages": true,
+        "timeout_seconds": 30
+      },
+      "resources": {
+        "enabled": true,
+        "cpu_threshold_percentage": 80,
+        "memory_threshold_percentage": 85,
+        "disk_threshold_percentage": 90
+      }
+    },
+    "alert_rules": {
+      "enabled": true,
+      "channels": ["log", "webhook", "email"],
+      "rules": [
+        {
+          "name": "high_error_rate",
+          "condition": "error_rate > 0.1",
+          "severity": "warning",
+          "cooldown_minutes": 15
+        },
+        {
+          "name": "critical_error_rate",
+          "condition": "error_rate > 0.5",
+          "severity": "critical",
+          "cooldown_minutes": 5
+        },
+        {
+          "name": "performance_degradation",
+          "condition": "avg_duration > baseline * 2",
+          "severity": "warning",
+          "cooldown_minutes": 30
+        },
+        {
+          "name": "resource_exhaustion",
+          "condition": "cpu_usage > 90 or memory_usage > 95",
+          "severity": "critical",
+          "cooldown_minutes": 10
+        },
+        {
+          "name": "tool_unavailable",
+          "condition": "consecutive_failures > 5",
+          "severity": "critical",
+          "cooldown_minutes": 5
+        }
+      ]
+    },
+    "recovery_actions": {
+      "enabled": true,
+      "auto_restart": {
+        "enabled": true,
+        "max_attempts": 3,
+        "backoff_seconds": [10, 30, 60]
+      },
+      "circuit_breaker": {
+        "enabled": true,
+        "failure_threshold": 5,
+        "timeout_seconds": 60,
+        "half_open_requests": 3
+      }
+    }
+  },
+  "dashboards": {
+    "enabled": true,
+    "update_interval_seconds": 30,
+    "layouts": {
+      "overview": {
+        "widgets": [
+          {
+            "type": "metric",
+            "title": "Total Executions",
+            "metric": "tool_execution_total"
+          },
+          {
+            "type": "gauge",
+            "title": "Success Rate",
+            "metric": "tool_success_rate"
+          },
+          {
+            "type": "histogram",
+            "title": "Response Time Distribution",
+            "metric": "tool_response_time"
+          },
+          {
+            "type": "timeseries",
+            "title": "Executions Over Time",
+            "metric": "tool_execution_rate",
+            "period": "1h"
+          }
+        ]
+      },
+      "performance": {
+        "widgets": [
+          {
+            "type": "heatmap",
+            "title": "Performance by Tool",
+            "metrics": ["duration", "cpu_usage", "memory_usage"]
+          },
+          {
+            "type": "percentiles",
+            "title": "Response Time Percentiles",
+            "metric": "tool_response_time",
+            "percentiles": [50, 90, 95, 99]
+          }
+        ]
+      },
+      "health": {
+        "widgets": [
+          {
+            "type": "status",
+            "title": "Tool Health Status",
+            "show_details": true
+          },
+          {
+            "type": "alerts",
+            "title": "Active Alerts",
+            "max_alerts": 10
+          }
+        ]
+      }
+    }
+  },
+  "integrations": {
+    "prometheus": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "port": 9090
+    },
+    "grafana": {
+      "enabled": false,
+      "api_endpoint": "http://localhost:3000",
+      "api_key": ""
+    },
+    "datadog": {
+      "enabled": false,
+      "api_key": "",
+      "app_key": "",
+      "site": "datadoghq.com"
+    },
+    "elasticsearch": {
+      "enabled": false,
+      "hosts": ["http://localhost:9200"],
+      "index_prefix": "tools-monitoring",
+      "username": "",
+      "password": ""
+    }
+  },
+  "security": {
+    "api_authentication": {
+      "enabled": false,
+      "type": "bearer_token",
+      "tokens": []
+    },
+    "data_encryption": {
+      "enabled": false,
+      "algorithm": "AES-256-GCM"
+    },
+    "audit_logging": {
+      "enabled": true,
+      "log_access": true,
+      "log_modifications": true,
+      "retention_days": 90
+    }
+  },
+  "performance": {
+    "optimization": {
+      "cache_metrics": true,
+      "batch_exports": true,
+      "compression": true,
+      "sampling": {
+        "enabled": false,
+        "rate": 0.1
+      }
+    },
+    "resource_limits": {
+      "max_memory_mb": 512,
+      "max_traces": 10000,
+      "max_events": 100000,
+      "max_metrics": 50000
+    }
+  }
+}

@@ -8,23 +8,55 @@ and seamless switching between different model implementations.
 
 # Import existing models.py classes for backward compatibility
 import sys
+import os
 from pathlib import Path
 
-# Get the parent directory and import from models.py
-parent_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(parent_dir))
-
 try:
+    # Try importing from the parent directory's models.py
+    parent_path = os.path.join(os.path.dirname(__file__), '..')
+    sys.path.insert(0, parent_path)
     from models import (  # noqa: F401
         BlockType, CodeBlock, ParseError, ParseResult
     )
     __all__ = ['BlockType', 'CodeBlock', 'ParseError', 'ParseResult']
 except ImportError:
-    # If models.py doesn't exist in parent, these will be defined here later
-    __all__ = []
-
-# Remove the parent from sys.path to avoid conflicts
-sys.path.pop(0)
+    # If import fails, create placeholder classes to prevent crashes
+    from enum import Enum
+    from dataclasses import dataclass
+    from typing import Optional, Dict, Any, Tuple, List
+    
+    class BlockType(Enum):
+        ENGLISH = "english"
+        PYTHON = "python"
+        MIXED = "mixed"
+        COMMENT = "comment"
+    
+    @dataclass
+    class CodeBlock:
+        type: BlockType
+        content: str
+        line_numbers: Tuple[int, int]
+        metadata: Dict[str, Any]
+        context: Optional[str] = None
+    
+    @dataclass
+    class ParseError:
+        message: str
+        line_number: Optional[int] = None
+        block_content: Optional[str] = None
+        suggestion: Optional[str] = None
+    
+    @dataclass
+    class ParseResult:
+        blocks: List[CodeBlock]
+        errors: List[ParseError]
+        warnings: List[str]
+    
+    __all__ = ['BlockType', 'CodeBlock', 'ParseError', 'ParseResult']
+finally:
+    # Clean up sys.path
+    if parent_path in [os.path.normpath(p) for p in sys.path]:
+        sys.path.remove(parent_path)
 
 # Future imports for the new model system (will be added as files are created)
 try:

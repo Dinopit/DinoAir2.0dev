@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict, deque
 import time
 from enum import Enum
+from math import isfinite
 
 
 class RateLimitStrategy(Enum):
@@ -255,8 +256,14 @@ class RateLimiter:
         
         # Refill tokens based on time passed
         time_passed = now - bucket['last_update']
-        refill_rate = limit / self.config.window_seconds
-        new_tokens = time_passed * refill_rate
+        
+        # Avoid division by zero
+        if self.config.window_seconds <= 0:
+            refill_rate = float('inf')  # Infinite rate means no limiting
+            new_tokens = float('inf')
+        else:
+            refill_rate = limit / self.config.window_seconds
+            new_tokens = time_passed * refill_rate
         
         bucket['tokens'] = min(
             bucket['tokens'] + new_tokens,
@@ -268,7 +275,13 @@ class RateLimiter:
         if bucket['tokens'] < 1:
             # Calculate when next token will be available
             tokens_needed = 1 - bucket['tokens']
-            seconds_until_token = tokens_needed / refill_rate
+            
+            # Avoid division by zero
+            if refill_rate <= 0 or not isfinite(refill_rate):
+                seconds_until_token = 0  # No waiting if infinite rate
+            else:
+                seconds_until_token = tokens_needed / refill_rate
+            
             reset_time = datetime.now() + timedelta(seconds=seconds_until_token)
             
             return RateLimitStatus(
@@ -283,7 +296,13 @@ class RateLimiter:
         
         # Calculate reset time (when bucket will be full)
         tokens_to_full = self.config.burst_size - bucket['tokens']
-        seconds_to_full = tokens_to_full / refill_rate
+        
+        # Avoid division by zero
+        if refill_rate <= 0 or not isfinite(refill_rate):
+            seconds_to_full = 0  # Immediate refill if infinite rate
+        else:
+            seconds_to_full = tokens_to_full / refill_rate
+        
         reset_time = datetime.now() + timedelta(seconds=seconds_to_full)
         
         return RateLimitStatus(

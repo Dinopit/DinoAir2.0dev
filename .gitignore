@@ -1,6 +1,9 @@
-# Temporary extraction folders
-DinoAir2.0dev-extracted/
+# =================================================================
+# DinoAir 2.0 - Python GUI Application with AI/LLM Integration
+# Comprehensive .gitignore for PySide6/Qt GUI with Ollama/LLM
+# =================================================================
 
+# =================== PYTHON SPECIFIC ===================
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -40,6 +43,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# =================== TESTING & COVERAGE ===================
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -53,38 +57,22 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+tests/debug/
+tests/.pytest_cache/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
+# =================== VIRTUAL ENVIRONMENTS ===================
+# Environments
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 .python-version
 
 # pipenv
@@ -97,21 +85,16 @@ ipython_config.py
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+# =================== IDE & EDITOR SETTINGS ===================
+# VSCode
+.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.code-workspace
 
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+# PyCharm
+.idea/
 
 # Spyder project settings
 .spyderproject
@@ -120,76 +103,225 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Atom
+.atom/
 
-# Pyre type checker
-.pyre/
+# Vim
+*.swp
+*.swo
+*~
 
-# All databases (these are user-specific and should not be in version control)
+# =================== OPERATING SYSTEM FILES ===================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =================== GUI/QT SPECIFIC ===================
+# PySide6/PyQt compiled UI files
+ui_*.py
+*_ui.py
+
+# Qt Creator
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+*.user
+
+# Qt cache
+.qt_for_python/
+.qmake.cache
+.qmake.stash
+
+# Qt translations
+*.ts
+*.qm
+
+# =================== AI/ML SPECIFIC ===================
+# Model files and ML artifacts
+*.pt
+*.pth
+*.onnx
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+*.model
+*.weights
+*.bin
+
+# TensorFlow
+*.pb
+checkpoint
+*.ckpt*
+*.meta
+*.index
+
+# PyTorch
+*.tar
+
+# Hugging Face
+.cache/huggingface/
+.cache/torch/
+transformers_cache/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# =================== DATABASE & STORAGE ===================
+# All databases (user-specific and should not be in version control)
 *.db
 *.db-shm
 *.db-wal
 *.sqlite
 *.sqlite3
+*.sqlite3-journal
+
+# Application runtime databases
+timers.db
+memory.db
+chat_sessions.db
 
 # User data directory (contains user-specific data)
 src/user_data/
+src/user_data/*/databases/*.db
+src/user_data/*/temp/
+src/user_data/*/exports/
+src/user_data/*/backups/
 
-# Images (these should not be in version control)
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.bmp
-*.svg
-*.ico
-*.webp
+# =================== LOGS & RUNTIME DATA ===================
+# Log files
+*.log
+logs/
+indexing_crash.log
 
-# Mermaid diagrams
-*.mmd
-*.mermaid
+# Django stuff:
+local_settings.py
 
-# IDE settings
-.vscode/
-.idea/
+# Flask stuff:
+instance/
+.webassets-cache
 
-# OS files
-.DS_Store
-Thumbs.db
+# Scrapy stuff:
+.scrapy
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# =================== DOCUMENTATION ===================
+# Sphinx documentation
+docs/_build/
+docs/build/
+
+# mkdocs documentation
+/site
+
+# =================== CACHE & TEMPORARY FILES ===================
+# General cache
+*.cache
+.cache/
+
+# Python cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
 
 # Temporary files
 *.tmp
 *.temp
-*.swp
+temp/
 *~
+*.swp
 
 # Backup files
 *.bak
 *.backup
 
-# Log files
-logs/
-*.log
+# Archive files
+*.zip
+*.tar.gz
+*.rar
 
-# Config files that may contain sensitive data
+# =================== CONFIGURATION & SECRETS ===================
+# Configuration files that may contain sensitive data
 config/window_state.json
 
-# Temporary files and directories
-temp/
-*.tmp
-*.temp
-*.swp
-*~
+# Security-sensitive configuration
+secrets.json
+.secrets
+local_config.py
+private_config.py
 
-# Test and debug directories (organized)
-tests/debug/
-tests/.pytest_cache/
+# API keys and tokens
+.api_keys
+.tokens
+*.key
+*.pem
+
+# =================== DINOAIR SPECIFIC ===================
+# Temporary extraction folders
+DinoAir2.0dev-extracted/
+*-extracted/
+
+# Claude AI settings (contains user-specific configurations)
+.claude/
+.claude/**
 
 # Development and debugging files
 debug_*.py
@@ -200,6 +332,7 @@ find_*.py
 fix_*.py
 stress_test_*.py
 demo_*.py
+test_*.py
 watchdog_fix.py
 index_with_embeddings.py
 
@@ -208,21 +341,90 @@ recent_chats
 *.patches
 *.patch
 *.diff
-
-# Archive files
-*.zip
-*.tar.gz
-*.rar
+watchdog_patches.txt
 
 # Development notes and guides
 Project\ directory\ guide.txt
 GUI_INTEGRATION_SUMMARY.md
 RAG_INDEXING_FIX_SUMMARY.md
+*_SUMMARY.md
+CLEANUP_SUMMARY.md
 *diagram.png
 *photo.png
 
-# PyQt/PySide cache
-.qt_for_python/
+# Security test reports (may contain sensitive information)
+tests/security/reports/*.json
+
+# =================== MEDIA FILES ===================
+# Images (project-specific decision - uncomment if needed)
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+# *.bmp
+# *.svg
+# *.ico
+# *.webp
+
+# Mermaid diagrams
+*.mmd
+*.mermaid
+
+# =================== LANGUAGE SPECIFIC ===================
+# Translations
+*.mo
+*.pot
+
+# IPython
+profile_default/
+ipython_config.py
+
+# SageMath parsed files
+*.sage.py
+
+# =================== ADDITIONAL TOOLS ===================
+# npm (if using any Node.js tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Docker
+.dockerignore
+Dockerfile.dockerignore
+
+# Git
+*.orig
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*_BACKUP_*
+*_BASE_*
+*_LOCAL_*
+*_REMOTE_*
+
+# Profiling
+*.prof
+*.lprof
+*.pstats
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# Linting
+.flake8
+.pylintrc
+pyrightconfig.json
+
+# =================== ADDITIONAL CACHE PATTERNS ===================
+# Additional Python-related cache
+*.pyc
+**/__pycache__/
+**/*.pyc
 
 # Jupyter notebook checkpoints in any subdirectory
 **/.ipynb_checkpoints/
+
+# =================== END OF FILE ===================

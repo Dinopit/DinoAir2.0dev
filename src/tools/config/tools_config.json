@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tool Configuration",
+  "description": "Configuration file for DinoAir tool discovery and management",
+  "type": "object",
+  "properties": {
+    "base_path": {
+      "type": "string",
+      "description": "Base path for relative tool imports"
+    },
+    "discovery": {
+      "type": "object",
+      "description": "Tool discovery configuration",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "description": "Filesystem paths to search for tools",
+          "items": {
+            "type": "string"
+          }
+        },
+        "patterns": {
+          "type": "array",
+          "description": "File patterns to match when discovering tools",
+          "items": {
+            "type": "string"
+          },
+          "default": ["*_tool.py", "*tool.py", "tool_*.py"]
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "Whether to search directories recursively",
+          "default": true
+        },
+        "auto_register": {
+          "type": "boolean",
+          "description": "Whether to automatically register discovered tools",
+          "default": true
+        },
+        "discover_packages": {
+          "type": "boolean",
+          "description": "Whether to discover tools from installed packages",
+          "default": true
+        },
+        "entry_point_group": {
+          "type": "string",
+          "description": "Entry point group name for package discovery",
+          "default": "dinoair.tools"
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "description": "Tool-specific configurations",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Simple module path"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "module": {
+                "type": "string",
+                "description": "Module path or file path"
+              },
+              "class": {
+                "type": "string",
+                "description": "Specific class name to load"
+              },
+              "config": {
+                "type": "object",
+                "description": "Tool-specific configuration",
+                "additionalProperties": true
+              },
+              "enabled": {
+                "type": "boolean",
+                "description": "Whether the tool is enabled",
+                "default": true
+              },
+              "singleton": {
+                "type": "boolean",
+                "description": "Whether to maintain a single instance",
+                "default": true
+              },
+              "tags": {
+                "type": "array",
+                "description": "Additional tags for categorization",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dependencies": {
+                "type": "array",
+                "description": "Other tools this tool depends on",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["module"]
+          }
+        ]
+      }
+    },
+    "registry": {
+      "type": "object",
+      "description": "Registry configuration",
+      "properties": {
+        "lazy_loading": {
+          "type": "boolean",
+          "description": "Whether to use lazy loading for tools",
+          "default": true
+        },
+        "validation": {
+          "type": "object",
+          "description": "Validation settings",
+          "properties": {
+            "strict": {
+              "type": "boolean",
+              "description": "Whether to use strict validation",
+              "default": true
+            },
+            "fail_on_warning": {
+              "type": "boolean",
+              "description": "Whether to fail registration on warnings",
+              "default": false
+            }
+          }
+        },
+        "event_handling": {
+          "type": "object",
+          "description": "Event handling configuration",
+          "properties": {
+            "log_events": {
+              "type": "boolean",
+              "description": "Whether to log tool events",
+              "default": true
+            },
+            "event_handlers": {
+              "type": "array",
+              "description": "List of event handler modules",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "base_path": "./src/tools",
+      "discovery": {
+        "paths": ["./src/tools/examples", "./custom_tools"],
+        "patterns": ["*_tool.py"],
+        "recursive": true,
+        "auto_register": true
+      },
+      "tools": {
+        "echo_tool": "./examples/echo_tool.EchoTool",
+        "math_tool": {
+          "module": "./examples/math_tool",
+          "class": "MathTool",
+          "config": {
+            "precision": 4,
+            "allow_complex": true
+          },
+          "tags": ["calculation", "mathematics"]
+        },
+        "file_tool": {
+          "module": "./examples/file_tool",
+          "class": "FileTool",
+          "config": {
+            "max_file_size": 10485760,
+            "allowed_extensions": [".txt", ".json", ".csv"]
+          },
+          "enabled": true,
+          "singleton": false
+        }
+      },
+      "registry": {
+        "lazy_loading": true,
+        "validation": {
+          "strict": true,
+          "fail_on_warning": false
+        }
+      }
+    }
+  ]
+}

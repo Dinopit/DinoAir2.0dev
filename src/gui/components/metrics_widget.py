@@ -20,15 +20,35 @@ class AnimatedProgressBar(QProgressBar):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._animation = QPropertyAnimation(self, b"value")
-        self._animation.setDuration(250)  # 250ms animation
-        self._animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        self._animation.setDuration(150)  # Reduced from 250ms to 150ms
+        self._animation.setEasingCurve(QEasingCurve.Type.Linear)  # Linear is less CPU intensive
+        self._target_value = 0
+        self._last_update_time = 0
         
     def setValue(self, value: int):
-        """Override to animate value changes"""
-        self._animation.stop()
-        self._animation.setStartValue(self.value())
-        self._animation.setEndValue(value)
-        self._animation.start()
+        """Override to animate value changes with throttling"""
+        import time
+        current_time = time.time()
+        
+        # Throttle updates to max once per 100ms
+        if current_time - self._last_update_time < 0.1:
+            # Just update target, don't restart animation
+            self._target_value = value
+            return
+            
+        self._last_update_time = current_time
+        self._target_value = value
+        
+        # Only animate if change is significant (>5%)
+        current = self.value()
+        if abs(value - current) > 5:
+            self._animation.stop()
+            self._animation.setStartValue(current)
+            self._animation.setEndValue(value)
+            self._animation.start()
+        else:
+            # Small changes - just set directly
+            super().setValue(value)
 
 
 class MetricDisplay(QFrame):

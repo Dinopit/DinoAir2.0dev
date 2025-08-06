@@ -23,6 +23,8 @@ from ..pages.artifacts_page import ArtifactsPage
 from ..pages.file_search_page import FileSearchPage
 from ..pages.tasks_page import ProjectsPage as TasksPage
 from ..pages.pseudocode_page import PseudocodePage
+from ..pages.model_page import ModelPage
+from ..pages.help_page import HelpPage
 from src.input_processing.input_sanitizer import (
     InputPipeline, InputPipelineError
 )
@@ -103,15 +105,17 @@ class TabbedContentWidget(QWidget):
     watchdog_control_requested = Signal(str)  # Forward from settings
     watchdog_config_changed = Signal(dict)    # Forward from settings
     
-    def __init__(self, database_manager=None):
+    def __init__(self, database_manager=None, main_window=None):
         """Initialize the tabbed content widget.
         
         Args:
             database_manager: DatabaseManager instance for database operations
+            main_window: MainWindow instance for agent registry access
         """
         super().__init__()
         self.settings_page = None
         self.database_manager = database_manager
+        self.main_window = main_window
         self._scaling_helper = get_scaling_helper()
         self.chat_tab = None
         self.chat_db = None
@@ -195,6 +199,12 @@ class TabbedContentWidget(QWidget):
             elif tab['id'] == 'pseudocode':
                 # Create the pseudocode translator page
                 tab_content = PseudocodePage()
+            elif tab['id'] == 'model':
+                # Create the model page for Ollama integration
+                tab_content = ModelPage(main_window=self.main_window)
+            elif tab['id'] == 'help':
+                # Create the help page
+                tab_content = HelpPage()
             else:
                 # Create regular tab content
                 tab_content = TabContentWidget(tab['label'])
@@ -300,13 +310,11 @@ class TabbedContentWidget(QWidget):
                         is_user=True
                     )
                 
-                # Simulate a response using the clean message
-                # In a real app, this would call an AI service
-                response = (
-                    f"You said: '{clean_message}'. "
-                    f"Intent detected: {intent.value}. "
-                    f"This is a placeholder response."
+                # Get AI response using the selected model
+                response = self._generate_ai_response(
+                    clean_message, chat_widget
                 )
+                
                 chat_widget.add_message(  # type: ignore
                     response, is_user=False
                 )
@@ -325,6 +333,196 @@ class TabbedContentWidget(QWidget):
                 chat_widget.add_message(  # type: ignore
                     error_msg, is_user=False
                 )
+    
+    def _generate_ai_response(self, message: str, chat_widget):
+        """Generate AI response using the selected model agent with tools.
+        
+        Args:
+            message: The user's message
+            chat_widget: The chat widget to get model info from
+            
+        Returns:
+            str: The AI response
+        """
+        import logging
+        import asyncio
+        logger = logging.getLogger(__name__)
+        
+        # Initialize current_model to avoid unbound variable error
+        current_model = "unknown model"
+        
+        try:
+            # Get the currently selected model from chat widget
+            current_model = None
+            logger.info("DEBUG: _generate_ai_response called")
+            logger.info(f"DEBUG: chat_widget type: {type(chat_widget)}")
+            has_get_current_model = hasattr(chat_widget, 'get_current_model')
+            logger.info(f"DEBUG: chat_widget has get_current_model: "
+                        f"{has_get_current_model}")
+            
+            if has_get_current_model:
+                current_model = chat_widget.get_current_model()
+                logger.info(f"DEBUG: Current model from chat tab: "
+                            f"'{current_model}'")
+            else:
+                logger.warning("DEBUG: chat_widget does not have "
+                               "get_current_model method")
+            
+            # Also check if the chat widget has current_model attribute
+            if hasattr(chat_widget, 'current_model'):
+                attr_model = chat_widget.current_model
+                logger.info(f"DEBUG: chat_widget.current_model attribute: "
+                            f"'{attr_model}'")
+                if not current_model:
+                    current_model = attr_model
+            
+            # If no model selected, provide helpful message
+            if not current_model:
+                logger.warning("DEBUG: No model found, returning "
+                               "selection message")
+                return ("Please select a model in the Model tab first. "
+                        "Go to the Model tab, choose a model, "
+                        "then return here to chat.")
+            
+            # Try to get agent from registry first (preferred method)
+            agent = None
+            if self.main_window:
+                agent = self.main_window.get_current_agent()
+                logger.info(f"DEBUG: Retrieved agent from registry: "
+                            f"{agent is not None}")
+            else:
+                logger.warning("DEBUG: main_window reference not available")
+            
+            # If agent from registry is available, use it (with tools)
+            if agent and hasattr(agent, 'chat'):
+                logger.info(f"DEBUG: Using registered OllamaAgent with tools "
+                            f"for model: {current_model}")
+                
+                # Run async chat method in a new event loop
+                try:
+                    # Check if there's already an event loop running
+                    try:
+                        asyncio.get_running_loop()
+                        # If we're in an event loop, use run_in_executor
+                        # to avoid blocking
+                        import concurrent.futures
+                        with concurrent.futures.ThreadPoolExecutor() as exec:
+                            future = exec.submit(
+                                self._run_agent_chat_sync, agent, message
+                            )
+                            # 60 second timeout
+                            response_data = future.result(timeout=60)
+                    except RuntimeError:
+                        # No event loop running, we can use asyncio.run
+                        response_data = asyncio.run(
+                            agent.chat(message, use_tools=True)
+                        )
+                    
+                    if response_data.get('success', False):
+                        response = response_data.get('response', '')
+                        tool_results = response_data.get('tool_results', [])
+                        
+                        # Format response with tool information if tools used
+                        if tool_results:
+                            tool_info = []
+                            for result in tool_results:
+                                tool_name = result.get('tool_name', 'unknown')
+                                success = result.get('success', False)
+                                if success:
+                                    tool_info.append(f"✅ Used {tool_name}")
+                                else:
+                                    tool_info.append(f"❌ Failed {tool_name}")
+                            
+                            if tool_info:
+                                tool_summary = " | ".join(tool_info)
+                                response = (f"{response}\n\n"
+                                            f"*Tools used: {tool_summary}*")
+                        
+                        resp_len = len(response)
+                        tools_count = len(tool_results)
+                        logger.info(f"DEBUG: Agent response length: "
+                                    f"{resp_len}, tools used: {tools_count}")
+                        
+                        if response.strip():
+                            return response
+                        else:
+                            return (f"No response generated from agent "
+                                    f"with {current_model}. Please try again.")
+                    else:
+                        error = response_data.get('error', 'Unknown error')
+                        logger.warning(f"DEBUG: Agent chat failed: {error}")
+                        # Fall back to wrapper
+                        
+                except Exception as agent_error:
+                    logger.warning(f"DEBUG: Agent chat failed with "
+                                   f"exception: {agent_error}")
+                    # Fall back to wrapper
+            else:
+                # No agent available from registry, will fall back to wrapper
+                if agent is None:
+                    logger.info("DEBUG: No agent available from registry, "
+                                "using wrapper fallback")
+                else:
+                    logger.warning("DEBUG: Agent found but missing "
+                                   "chat method")
+            
+            # Fallback to wrapper if agent not available or failed
+            # Get the model page to access wrapper
+            model_page = None
+            for i, tab in enumerate(self.tabs):
+                if tab['id'] == 'model':
+                    model_page = self.tab_widget.widget(i)
+                    break
+            
+            if not model_page:
+                return (f"Model page not available for fallback. "
+                        f"Using model: {current_model}")
+            
+            wrapper = getattr(model_page, 'ollama_wrapper', None)
+            if not wrapper:
+                return (f"Neither agent nor wrapper available. "
+                        f"Using model: {current_model}")
+                
+            if not wrapper.is_ready:
+                return (f"Ollama service not ready. Please check the "
+                        f"Model tab. Selected model: {current_model}")
+            
+            logger.info(f"DEBUG: Falling back to OllamaWrapper "
+                        f"for model: {current_model}")
+            
+            # Create simple chat messages list
+            messages = [{"role": "user", "content": message}]
+            
+            # Generate streaming response
+            response_parts = []
+            for chunk in wrapper.stream_chat(
+                messages, model=current_model, use_context=True
+            ):
+                response_parts.append(chunk)
+            
+            response = ''.join(response_parts)
+            logger.info(f"DEBUG: Wrapper response length: {len(response)}")
+            
+            if response.strip():
+                return response
+            else:
+                return (f"No response generated from {current_model}. "
+                        f"Please try again.")
+            
+        except Exception as e:
+            logger.error(f"Error generating AI response: {e}")
+            return (f"Error generating response with {current_model}: "
+                    f"{str(e)}")
+    
+    def _run_agent_chat_sync(self, agent, message):
+        """Run agent chat in a new event loop (for thread execution)"""
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(agent.chat(message, use_tools=True))
+        finally:
+            loop.close()
     
     def get_current_tab(self):
         """Get the currently active tab.
@@ -392,6 +590,12 @@ class TabbedContentWidget(QWidget):
                 self.chat_tab,
                 self.tabs[self.chat_tab_index]['label']
             )
+            
+            # Notify main window that chat tab is ready
+            if self.main_window and hasattr(self.main_window, '_check_and_setup_signals'):
+                # Use QTimer to ensure this happens after the widget is fully set up
+                from PySide6.QtCore import QTimer
+                QTimer.singleShot(100, self.main_window._check_and_setup_signals)
             
     def get_chat_tab(self):
         """Get the chat tab widget.

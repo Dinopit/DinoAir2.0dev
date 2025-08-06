@@ -1,0 +1,342 @@
+{
+  "version": "1.0.0",
+  "description": "Tool control configuration for policy enforcement and restrictions",
+  
+  "default_policies": {
+    "enabled": true,
+    "policies": [
+      {
+        "type": "category",
+        "name": "default_category_policy",
+        "config": {
+          "denied_categories": ["debug", "system"],
+          "allowed_categories": ["utility", "transformation", "analysis"]
+        }
+      },
+      {
+        "type": "capability",
+        "name": "default_capability_policy",
+        "config": {
+          "forbidden_capabilities": ["system_execute", "file_delete"],
+          "required_capabilities": [],
+          "require_all": true
+        }
+      }
+    ]
+  },
+  
+  "environment_policies": {
+    "production": {
+      "policies": [
+        {
+          "type": "deny_list",
+          "name": "production_deny_list",
+          "config": {
+            "denied_tools": ["debug_tool", "test_tool", "mock_tool"]
+          }
+        },
+        {
+          "type": "capability",
+          "name": "production_capability_policy",
+          "config": {
+            "forbidden_capabilities": ["debug", "test", "mock", "experimental"],
+            "required_capabilities": ["stable", "secure"]
+          }
+        }
+      ],
+      "restrictions": {
+        "rate_limits": {
+          "default": {
+            "rate": 10.0,
+            "burst": 20,
+            "per_user": true
+          },
+          "high_cost": {
+            "rate": 1.0,
+            "burst": 5,
+            "per_user": true,
+            "tools": ["expensive_tool", "ai_tool"]
+          }
+        },
+        "resource_limits": {
+          "max_memory_percent": 80.0,
+          "max_cpu_percent": 90.0,
+          "check_interval": 1.0
+        }
+      }
+    },
+    
+    "development": {
+      "policies": [
+        {
+          "type": "allow_list",
+          "name": "development_allow_all",
+          "config": {
+            "allowed_tools": ["*"]
+          }
+        }
+      ],
+      "restrictions": {
+        "rate_limits": {
+          "default": {
+            "rate": 100.0,
+            "burst": 200,
+            "per_user": false
+          }
+        },
+        "resource_limits": {
+          "max_memory_percent": 95.0,
+          "max_cpu_percent": 95.0
+        }
+      }
+    },
+    
+    "testing": {
+      "policies": [
+        {
+          "type": "category",
+          "name": "testing_category_policy",
+          "config": {
+            "allowed_categories": ["utility", "transformation", "analysis", "debug"],
+            "denied_categories": ["system"]
+          }
+        }
+      ],
+      "restrictions": {
+        "rate_limits": {
+          "default": {
+            "rate": 50.0,
+            "burst": 100,
+            "per_user": true
+          }
+        }
+      }
+    }
+  },
+  
+  "role_permissions": {
+    "admin": {
+      "permissions": [
+        "use_all_tools",
+        "use_system_tools",
+        "use_debug_tools",
+        "modify_files",
+        "execute_commands",
+        "network_access",
+        "override_policies"
+      ],
+      "allowed_tools": ["*"],
+      "quotas": {
+        "daily": null,
+        "hourly": null
+      }
+    },
+    
+    "developer": {
+      "permissions": [
+        "use_most_tools",
+        "use_debug_tools",
+        "modify_files",
+        "execute_commands",
+        "network_access"
+      ],
+      "denied_tools": ["admin_tool", "system_config_tool"],
+      "quotas": {
+        "daily": 1000,
+        "hourly": 100
+      }
+    },
+    
+    "user": {
+      "permissions": [
+        "use_basic_tools",
+        "read_files",
+        "limited_network"
+      ],
+      "allowed_categories": ["utility", "transformation", "analysis"],
+      "denied_categories": ["system", "debug"],
+      "quotas": {
+        "daily": 100,
+        "hourly": 20
+      }
+    },
+    
+    "guest": {
+      "permissions": [
+        "use_safe_tools",
+        "read_only"
+      ],
+      "allowed_tools": ["echo_tool", "math_tool", "help_tool"],
+      "quotas": {
+        "daily": 10,
+        "hourly": 5
+      }
+    }
+  },
+  
+  "tool_specific_config": {
+    "file_tool": {
+      "restrictions": {
+        "allowed_paths": ["./workspace", "./tmp"],
+        "denied_paths": ["/etc", "/sys", "/proc"],
+        "max_file_size": 10485760,
+        "allowed_extensions": [".txt", ".json", ".py", ".js", ".md"]
+      },
+      "rate_limit": {
+        "rate": 5.0,
+        "burst": 10
+      }
+    },
+    
+    "network_tool": {
+      "restrictions": {
+        "allowed_domains": ["api.example.com", "localhost"],
+        "denied_domains": ["malicious.com"],
+        "allowed_ports": [80, 443, 8080],
+        "timeout": 30
+      },
+      "rate_limit": {
+        "rate": 2.0,
+        "burst": 5
+      }
+    },
+    
+    "execute_tool": {
+      "restrictions": {
+        "allowed_commands": ["ls", "echo", "cat", "grep"],
+        "denied_commands": ["rm", "sudo", "chmod", "chown"],
+        "max_execution_time": 60,
+        "require_approval": true
+      },
+      "permissions": ["execute_commands"],
+      "rate_limit": {
+        "rate": 1.0,
+        "burst": 3
+      }
+    }
+  },
+  
+  "time_restrictions": {
+    "business_hours": {
+      "windows": [
+        {"start": 9, "end": 17}
+      ],
+      "timezone": "local",
+      "categories": ["production", "integration"]
+    },
+    
+    "maintenance_window": {
+      "windows": [
+        {"start": 2, "end": 4}
+      ],
+      "timezone": "UTC",
+      "allowed_tools": ["maintenance_tool", "backup_tool"]
+    },
+    
+    "blackout_periods": [
+      {
+        "start": "2024-12-24T00:00:00",
+        "end": "2024-12-26T23:59:59",
+        "reason": "Holiday period"
+      }
+    ]
+  },
+  
+  "context_rules": {
+    "task_type_mapping": {
+      "data_processing": {
+        "preferred_categories": ["transformation", "analysis"],
+        "boost_score": 0.2
+      },
+      "file_operation": {
+        "preferred_categories": ["utility", "system"],
+        "required_capabilities": ["file_read", "file_write"]
+      },
+      "debugging": {
+        "preferred_categories": ["debug", "analysis"],
+        "allowed_in_environments": ["development", "testing"]
+      }
+    },
+    
+    "scoring_weights": {
+      "user_preference": 0.25,
+      "task_relevance": 0.35,
+      "environment_fit": 0.20,
+      "historical_success": 0.20
+    },
+    
+    "selection_thresholds": {
+      "min_score": 0.6,
+      "max_recommendations": 5
+    }
+  },
+  
+  "override_mechanisms": {
+    "policy_overrides": {
+      "enabled": true,
+      "require_permission": "override_policies",
+      "audit_log": true,
+      "max_duration": 3600
+    },
+    
+    "emergency_access": {
+      "enabled": true,
+      "activation_code": "EMERGENCY-2024",
+      "grants_permissions": ["use_all_tools"],
+      "duration": 1800,
+      "notify_admins": true
+    },
+    
+    "tool_specific_overrides": {
+      "debug_tool": {
+        "allow_in_production": false,
+        "override_permission": "debug_in_production"
+      }
+    }
+  },
+  
+  "monitoring": {
+    "log_level": "INFO",
+    "audit_trail": {
+      "enabled": true,
+      "log_denials": true,
+      "log_overrides": true,
+      "retention_days": 30
+    },
+    
+    "alerts": {
+      "rate_limit_exceeded": {
+        "threshold": 10,
+        "window": 300,
+        "notify": ["admin@example.com"]
+      },
+      "resource_exhaustion": {
+        "memory_threshold": 90,
+        "cpu_threshold": 95,
+        "notify": ["ops@example.com"]
+      },
+      "policy_violation": {
+        "severity": "high",
+        "notify": ["security@example.com"]
+      }
+    }
+  },
+  
+  "defaults": {
+    "rate_limit": {
+      "rate": 10.0,
+      "burst": 20,
+      "per_user": true
+    },
+    "resource_limits": {
+      "max_memory_percent": 85.0,
+      "max_cpu_percent": 90.0
+    },
+    "quotas": {
+      "daily": 500,
+      "hourly": 50
+    },
+    "cache_ttl": 300,
+    "policy_evaluation_timeout": 5.0
+  }
+}

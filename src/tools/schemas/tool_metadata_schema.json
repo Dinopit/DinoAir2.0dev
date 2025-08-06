@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dinoair.com/schemas/tool-metadata.json",
+  "title": "Tool Metadata Schema",
+  "description": "Schema for DinoAir tool metadata validation",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "description",
+    "author",
+    "category"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique name of the tool",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+      "minLength": 3,
+      "maxLength": 50
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the tool",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the tool's purpose",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or team name",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "category": {
+      "type": "string",
+      "description": "Tool category",
+      "enum": [
+        "transformation",
+        "analysis",
+        "generation",
+        "utility",
+        "integration",
+        "system",
+        "debug",
+        "custom"
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for tool categorization and search",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]+$",
+        "minLength": 2,
+        "maxLength": 30
+      },
+      "uniqueItems": true,
+      "maxItems": 20
+    },
+    "icon": {
+      "type": "string",
+      "description": "Icon URL or emoji for the tool",
+      "anyOf": [
+        {
+          "pattern": "^https?://.*\\.(png|jpg|jpeg|svg|ico)$"
+        },
+        {
+          "pattern": "^[\\u{1F300}-\\u{1F9FF}\\u{2600}-\\u{26FF}]$"
+        }
+      ]
+    },
+    "documentation_url": {
+      "type": "string",
+      "description": "URL to detailed documentation",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "repository_url": {
+      "type": "string",
+      "description": "URL to source code repository",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "license": {
+      "type": "string",
+      "description": "License identifier (e.g., MIT, Apache-2.0)",
+      "minLength": 2,
+      "maxLength": 50
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of required dependencies",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "uniqueItems": true
+    },
+    "parameters": {
+      "type": "array",
+      "description": "Tool parameter definitions",
+      "items": {
+        "$ref": "#/definitions/parameter"
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Tool capabilities flags",
+      "properties": {
+        "async_support": {
+          "type": "boolean",
+          "description": "Supports asynchronous execution"
+        },
+        "streaming": {
+          "type": "boolean",
+          "description": "Supports streaming operations"
+        },
+        "cancellable": {
+          "type": "boolean",
+          "description": "Operations can be cancelled"
+        },
+        "progress_reporting": {
+          "type": "boolean",
+          "description": "Reports progress during execution"
+        },
+        "batch_processing": {
+          "type": "boolean",
+          "description": "Supports batch operations"
+        },
+        "caching": {
+          "type": "boolean",
+          "description": "Supports result caching"
+        },
+        "stateful": {
+          "type": "boolean",
+          "description": "Maintains state between operations"
+        }
+      },
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "examples": {
+      "type": "array",
+      "description": "Usage examples",
+      "items": {
+        "$ref": "#/definitions/example"
+      },
+      "maxItems": 10
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional custom metadata",
+      "additionalProperties": true
+    }
+  },
+  "definitions": {
+    "parameter": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "description": "Parameter type",
+          "enum": [
+            "string",
+            "integer",
+            "float",
+            "boolean",
+            "array",
+            "object",
+            "file_path",
+            "url",
+            "enum",
+            "any"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "Parameter description",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether the parameter is required",
+          "default": true
+        },
+        "default": {
+          "description": "Default value if not provided"
+        },
+        "enum_values": {
+          "type": "array",
+          "description": "Allowed values for enum type",
+          "items": {},
+          "uniqueItems": true
+        },
+        "min_value": {
+          "type": "number",
+          "description": "Minimum value for numeric types"
+        },
+        "max_value": {
+          "type": "number",
+          "description": "Maximum value for numeric types"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern for string validation"
+        },
+        "example": {
+          "description": "Example value"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional parameter metadata",
+          "additionalProperties": true
+        }
+      }
+    },
+    "example": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Example name",
+          "minLength": 3,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Example description",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Example parameter values",
+          "additionalProperties": true
+        },
+        "expected_output": {
+          "description": "Expected output or result"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or context"
+        }
+      }
+    }
+  }
+}

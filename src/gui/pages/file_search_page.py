@@ -20,7 +20,7 @@ from ...utils.colors import DinoPitColors
 from ...utils.logger import Logger
 from ...utils.scaling import get_scaling_helper
 from ...utils.window_state import window_state_manager
-from ..components.file_search_results import FileSearchResultsWidget
+from ..components.enhanced_file_search_results import EnhancedFileSearchResultsWidget
 from ..components.file_indexing_status import IndexingStatusWidget
 from ..components.directory_limiter_widget import DirectoryLimiterWidget
 
@@ -235,11 +235,14 @@ class FileSearchPage(QWidget):
         """)
         search_layout.addWidget(self.search_mode_combo)
         
-        # Search input
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search your files...")
+        # Search input with history
+        self.search_input = QComboBox()
+        self.search_input.setEditable(True)
+        self.search_input.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.search_input.lineEdit().setPlaceholderText("Search your files...")
+        self.search_input.setMaxCount(10)  # Keep last 10 searches
         self.search_input.setStyleSheet(f"""
-            QLineEdit {{
+            QComboBox {{
                 padding: 10px 15px;
                 border: 2px solid {DinoPitColors.SOFT_ORANGE};
                 border-radius: 20px;
@@ -255,8 +258,9 @@ class FileSearchPage(QWidget):
                 border-color: {DinoPitColors.DINOPIT_ORANGE};
             }}
         """)
-        self.search_input.textChanged.connect(self._on_search_text_changed)
-        self.search_input.returnPressed.connect(self._perform_search)
+        self.search_input.lineEdit().textChanged.connect(self._on_search_text_changed)
+        self.search_input.activated.connect(lambda: self._perform_search())
+        self.search_input.lineEdit().returnPressed.connect(self._perform_search)
         search_layout.addWidget(self.search_input, 1)
         
         # Search button
@@ -499,7 +503,7 @@ class FileSearchPage(QWidget):
         layout.addLayout(header_layout)
         
         # Results display widget
-        self.results_widget = FileSearchResultsWidget()
+        self.results_widget = EnhancedFileSearchResultsWidget()
         self.results_widget.file_selected.connect(self._on_file_selected)
         self.results_widget.file_open_requested.connect(self._open_file)
         self.results_widget.copy_path_requested.connect(self._copy_file_path)
@@ -550,7 +554,7 @@ class FileSearchPage(QWidget):
         self._search_mode = mode.lower()
         
         # Re-run search if we have a query
-        if self.search_input.text():
+        if self.search_input.currentText():
             self._perform_search()
     
     def _on_filter_toggled(self):
@@ -572,9 +576,16 @@ class FileSearchPage(QWidget):
     
     def _perform_search(self):
         """Perform the actual search"""
-        query = self.search_input.text().strip()
+        query = self.search_input.currentText().strip()
         if not query:
             return
+        
+        # Add to search history if not already there
+        if query and self.search_input.findText(query) == -1:
+            self.search_input.insertItem(0, query)
+            # Remove oldest if we exceed max count
+            while self.search_input.count() > self.search_input.maxCount():
+                self.search_input.removeItem(self.search_input.count() - 1)
         
         try:
             # Disable search button during search
@@ -640,7 +651,7 @@ class FileSearchPage(QWidget):
     
     def _display_results(self, results: List[SearchResult]):
         """Display search results"""
-        self.results_widget.display_results(results, self.search_input.text())
+        self.results_widget.display_results(results, self.search_input.currentText())
     
     def _apply_filters(self):
         """Apply file type filters to current results"""

@@ -8,9 +8,9 @@ from .sidebar import Sidebar
 from .statusbar import StatusBar
 from .artifact_panel import ArtifactsWidget
 from .chat_input import ChatInputWidget
-from .chat_history import ChatHistoryWidget
+from .enhanced_chat_history import EnhancedChatHistoryWidget
 from .tabbed_content import TabbedContentWidget
-from .chat_tab import ChatTabWidget
+from .enhanced_chat_tab import EnhancedChatTabWidget
 
 __all__ = [
     'TopBar', 
@@ -18,7 +18,7 @@ __all__ = [
     'StatusBar', 
     'ArtifactsWidget', 
     'ChatInputWidget',
-    'ChatHistoryWidget',
+    'EnhancedChatHistoryWidget',
     'TabbedContentWidget',
-    'ChatTabWidget'
+    'EnhancedChatTabWidget'
 ]

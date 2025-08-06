@@ -85,6 +85,7 @@ class WatchdogCompatibilityAdapter:
         self._monitoring = False
         self._health_check_thread = None
         self._startup_time = time.time()
+        self._lock = threading.RLock()  # Reentrant lock for thread safety
         
         # Try to initialize Qt controller
         self._initialize_qt_controller()
@@ -160,7 +161,10 @@ class WatchdogCompatibilityAdapter:
         
         def fallback_monitor():
             """Simplified monitoring loop."""
-            while self._monitoring:
+            while True:
+                with self._lock:
+                    if not self._monitoring:
+                        break
                 try:
                     # Collect basic metrics
                     from .Watchdog import SystemWatchdog
@@ -261,14 +265,15 @@ class WatchdogCompatibilityAdapter:
                 
     def start_monitoring(self) -> None:
         """Start watchdog monitoring with appropriate implementation."""
-        if self._monitoring:
-            logger.warning("Watchdog already monitoring")
-            return
-            
-        self._monitoring = True
-        logger.info(
-            f"Starting watchdog monitoring ({self.current_mode.value} mode)"
-        )
+        with self._lock:
+            if self._monitoring:
+                logger.warning("Watchdog already monitoring")
+                return
+                
+            self._monitoring = True
+            logger.info(
+                f"Starting watchdog monitoring ({self.current_mode.value} mode)"
+            )
         
         # Start health check thread if auto-fallback is enabled
         if self.fallback_config.auto_fallback:
@@ -332,15 +337,16 @@ class WatchdogCompatibilityAdapter:
         
     def stop_monitoring(self) -> None:
         """Stop watchdog monitoring."""
-        logger.info(
-            f"Stopping watchdog monitoring ({self.current_mode.value} mode)"
-        )
-        
-        if not self._monitoring:
-            logger.warning("Watchdog not monitoring")
-            return
+        with self._lock:
+            logger.info(
+                f"Stopping watchdog monitoring ({self.current_mode.value} mode)"
+            )
             
-        self._monitoring = False
+            if not self._monitoring:
+                logger.warning("Watchdog not monitoring")
+                return
+                
+            self._monitoring = False
         
         # Stop health check thread
         if self._health_check_thread:
@@ -446,7 +452,10 @@ class WatchdogCompatibilityAdapter:
         """Start periodic health check thread."""
         def health_check_loop():
             """Periodic health check for automatic recovery."""
-            while self._monitoring:
+            while True:
+                with self._lock:
+                    if not self._monitoring:
+                        break
                 try:
                     # Check current implementation health
                     if self.current_mode == WatchdogMode.QT:

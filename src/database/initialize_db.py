@@ -5,6 +5,7 @@ import sqlite3
 import os
 import shutil
 import time
+import threading
 from pathlib import Path
 from datetime import datetime
 from ..models.note import Note, NoteList
@@ -18,6 +19,10 @@ class DatabaseManager:
         self.user_feedback = user_feedback or print
         self.base_dir = Path(__file__).parent.parent  # Root of DinoAir2.0dev
         self.user_db_dir = self.base_dir / "user_data" / self.user_name / "databases"
+        
+        # Track active connections for cleanup
+        self._active_connections = []
+        self._connection_lock = threading.Lock()
         
         # Database file paths
         self.notes_db_path = self.user_db_dir / "notes.db"
@@ -54,8 +59,11 @@ class DatabaseManager:
         except PermissionError:
             self.user_feedback("Cannot create user folders. Please check permissions or run as administrator.")
             raise
+        except OSError as e:
+            self.user_feedback(f"OS error creating folders: {str(e)}. Check disk space and permissions.")
+            raise
         except Exception as e:
-            self.user_feedback(f"Error creating folders: {str(e)}")
+            self.user_feedback(f"Unexpected error creating folders: {str(e)}")
             raise
     
     def initialize_all_databases(self):
@@ -96,10 +104,16 @@ class DatabaseManager:
             projects_conn = projects_db.connect_with_retry()
             projects_conn.close()
             
-            self.user_feedback(f"✓ All databases ready for {self.user_name}")
+            self.user_feedback(f"[OK] All databases ready for {self.user_name}")
             
+        except sqlite3.Error as e:
+            self.user_feedback(f"[ERROR] Database error: {str(e)}. Please check database file permissions.")
+            raise
+        except PermissionError as e:
+            self.user_feedback("[ERROR] Permission denied. Please run as administrator or check file permissions.")
+            raise
         except Exception as e:
-            self.user_feedback("❌ Database setup failed. Please try restarting the application or contact support.")
+            self.user_feedback("[ERROR] Database setup failed. Please try restarting the application or contact support.")
             raise
     
     def _setup_notes_schema(self, conn):
@@ -113,7 +127,7 @@ class DatabaseManager:
         if 'project_id' not in columns and 'note_list' in [table[0] for table in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
             # Table exists but doesn't have project_id - add it
             cursor.execute('ALTER TABLE note_list ADD COLUMN project_id TEXT')
-            self.user_feedback("✓ Added project_id to existing notes table")
+            self.user_feedback("[OK] Added project_id to existing notes table")
         
         # Create note_list table (will only create if doesn't exist)
         cursor.execute('''
@@ -567,45 +581,78 @@ class DatabaseManager:
         
         conn.commit()
     
+    def _track_connection(self, conn):
+        """Track a database connection for cleanup"""
+        with self._connection_lock:
+            self._active_connections.append(conn)
+    
+    def _cleanup_connections(self):
+        """Close all tracked database connections"""
+        with self._connection_lock:
+            for conn in self._active_connections[:]:
+                try:
+                    if conn:
+                        conn.close()
+                        self.user_feedback(f"[OK] Database connection closed")
+                except Exception as e:
+                    self.user_feedback(f"[WARNING] Error closing connection: {e}")
+            self._active_connections.clear()
+    
     def get_notes_connection(self):
         """Get connection to notes database with resilient handling"""
         notes_db = ResilientDB(self.notes_db_path, self._setup_notes_schema, self.user_feedback)
-        return notes_db.connect_with_retry()
+        conn = notes_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_memory_connection(self):
         """Get connection to memory database with resilient handling"""
         memory_db = ResilientDB(self.memory_db_path, self._setup_memory_schema, self.user_feedback)
-        return memory_db.connect_with_retry()
+        conn = memory_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_user_tools_connection(self):
         """Get connection to user tools database with resilient handling"""
         tools_db = ResilientDB(self.user_tools_db_path, self._setup_user_tools_schema, self.user_feedback)
-        return tools_db.connect_with_retry()
+        conn = tools_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_chat_history_connection(self):
         """Get connection to chat history database with resilient handling"""
         chat_db = ResilientDB(self.chat_history_db_path, self._setup_chat_history_schema, self.user_feedback)
-        return chat_db.connect_with_retry()
+        conn = chat_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_appointments_connection(self):
         """Get connection to appointments database with resilient handling"""
         appointments_db = ResilientDB(self.appointments_db_path, self._setup_appointments_schema, self.user_feedback)
-        return appointments_db.connect_with_retry()
+        conn = appointments_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_artifacts_connection(self):
         """Get connection to artifacts database with resilient handling"""
         artifacts_db = ResilientDB(self.artifacts_db_path, self._setup_artifacts_schema, self.user_feedback)
-        return artifacts_db.connect_with_retry()
+        conn = artifacts_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_file_search_connection(self):
         """Get connection to file search database with resilient handling"""
         file_search_db = ResilientDB(self.file_search_db_path, self._setup_file_search_schema, self.user_feedback)
-        return file_search_db.connect_with_retry()
+        conn = file_search_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_projects_connection(self):
         """Get connection to projects database with resilient handling"""
         projects_db = ResilientDB(self.projects_db_path, self._setup_projects_schema, self.user_feedback)
-        return projects_db.connect_with_retry()
+        conn = projects_db.connect_with_retry()
+        self._track_connection(conn)
+        return conn
     
     def get_watchdog_metrics_manager(self):
         """Get WatchdogMetricsManager instance with memory database connection"""
@@ -628,15 +675,25 @@ class DatabaseManager:
                     backup_path = backup_dir / backup_name
                     shutil.copy2(db_path, backup_path)
             
-            self.user_feedback(f"✓ Backups saved to: {backup_dir}")
+            self.user_feedback(f"[OK] Backups saved to: {backup_dir}")
             
+        except OSError as e:
+            self.user_feedback(f"[ERROR] Backup failed - file system error: {str(e)}")
+            raise
+        except sqlite3.Error as e:
+            self.user_feedback(f"[ERROR] Backup failed - database error: {str(e)}")
+            raise
         except Exception as e:
-            self.user_feedback(f"❌ Backup failed: {str(e)}")
+            self.user_feedback(f"[ERROR] Backup failed - unexpected error: {str(e)}")
             raise
     
     def clean_memory_database(self, watchdog_retention_days=7):
-        """Clean expired entries from memory database"""
+        """Clean expired entries from memory database and close all connections"""
         try:
+            # First cleanup all tracked connections
+            self._cleanup_connections()
+            
+            # Then clean memory database
             with self.get_memory_connection() as conn:
                 cursor = conn.cursor()
                 
@@ -667,9 +724,11 @@ class DatabaseManager:
                 cursor.execute("VACUUM")
                 
                 self.user_feedback(
-                    f"✓ Memory database cleaned (removed {deleted_metrics} old metrics)"
+                    f"[OK] Memory database cleaned (removed {deleted_metrics} old metrics)"
                 )
                 
+        except sqlite3.Error as e:
+            self.user_feedback(f"Warning: Database error during cleanup: {str(e)}")
         except Exception as e:
             self.user_feedback(f"Warning: Could not clean memory database: {str(e)}")
 
@@ -692,5 +751,9 @@ if __name__ == "__main__":
     try:
         db_manager = initialize_user_databases("john_doe", console_feedback)
         console_feedback("Database setup completed successfully!")
+    except sqlite3.Error as e:
+        console_feedback(f"Database setup failed: {e}")
+    except PermissionError as e:
+        console_feedback(f"Permission error during setup: {e}")
     except Exception as e:
         console_feedback(f"Setup failed: {e}")

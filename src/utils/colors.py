@@ -28,6 +28,7 @@ class DinoPitColors:
     
     # Text Colors
     PRIMARY_TEXT = "#FFFFFF"        # White text for headers
+    SECONDARY_TEXT = "#CCCCCC"      # Light gray for secondary text
     ACCENT_TEXT = STUDIOS_CYAN      # Cyan for secondary text
     BRAND_TEXT = DINOPIT_ORANGE     # Orange for brand elements
     

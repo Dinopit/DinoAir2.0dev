@@ -1,0 +1,330 @@
+{
+  "version": "1.0.0",
+  "description": "Configuration for prompt engineering system",
+  
+  "default_settings": {
+    "style": "detailed",
+    "include_examples": true,
+    "max_examples": 3,
+    "include_errors": true,
+    "include_categories": true,
+    "include_capabilities": true,
+    "max_tokens": null,
+    "separator": "\n\n---\n\n"
+  },
+  
+  "model_profiles": {
+    "gpt-4": {
+      "capabilities": ["advanced", "function_calling", "long_context", "json_mode"],
+      "preferred_style": "structured",
+      "max_tokens": 8192,
+      "include_examples": true,
+      "prompt_types": ["comprehensive", "tool_selection", "few_shot"]
+    },
+    "gpt-3.5-turbo": {
+      "capabilities": ["basic", "function_calling", "json_mode"],
+      "preferred_style": "concise",
+      "max_tokens": 4096,
+      "include_examples": true,
+      "prompt_types": ["minimal", "tool_selection", "few_shot"]
+    },
+    "claude-3": {
+      "capabilities": ["advanced", "long_context"],
+      "preferred_style": "detailed",
+      "max_tokens": 100000,
+      "include_examples": true,
+      "prompt_types": ["comprehensive", "tutorial", "reference"]
+    },
+    "claude-2": {
+      "capabilities": ["advanced", "long_context"],
+      "preferred_style": "conversational",
+      "max_tokens": 100000,
+      "include_examples": true,
+      "prompt_types": ["comprehensive", "tutorial"]
+    },
+    "basic": {
+      "capabilities": ["basic"],
+      "preferred_style": "concise",
+      "max_tokens": 2048,
+      "include_examples": false,
+      "prompt_types": ["minimal"]
+    }
+  },
+  
+  "prompt_styles": {
+    "detailed": {
+      "description": "Comprehensive explanations with full context",
+      "include_sections": ["description", "parameters", "returns", "examples", "guidelines", "errors"],
+      "parameter_format": "detailed",
+      "example_format": "full"
+    },
+    "concise": {
+      "description": "Brief, to-the-point descriptions",
+      "include_sections": ["description", "parameters", "returns"],
+      "parameter_format": "simple",
+      "example_format": "minimal"
+    },
+    "few_shot": {
+      "description": "Focus on examples with minimal explanation",
+      "include_sections": ["examples", "pattern"],
+      "parameter_format": "none",
+      "example_format": "full",
+      "min_examples": 3,
+      "max_examples": 10
+    },
+    "structured": {
+      "description": "Highly structured JSON-like format",
+      "include_sections": ["schema", "examples"],
+      "parameter_format": "json",
+      "example_format": "json"
+    },
+    "conversational": {
+      "description": "Natural language style",
+      "include_sections": ["description", "usage", "examples"],
+      "parameter_format": "natural",
+      "example_format": "natural"
+    }
+  },
+  
+  "prompt_templates": {
+    "tool_description": {
+      "required_variables": ["tool_name", "description"],
+      "optional_variables": ["category", "purpose", "parameters", "returns", "guidelines", "examples", "error_handling"],
+      "customizable": true
+    },
+    "parameter_explanation": {
+      "required_variables": ["param_name", "param_type", "description"],
+      "optional_variables": ["required_marker", "type_detail", "constraints", "default_value", "example_value"],
+      "customizable": true
+    },
+    "usage_example": {
+      "required_variables": ["tool_name"],
+      "optional_variables": ["parameters_json", "output_json", "description", "parameters_python", "output_description", "parameters_natural"],
+      "customizable": true,
+      "formats": ["json", "python", "natural"]
+    },
+    "error_handling": {
+      "required_variables": ["error_list"],
+      "optional_variables": ["recovery_strategies"],
+      "customizable": true
+    },
+    "tool_selection": {
+      "required_variables": ["tool_list"],
+      "optional_variables": ["decision_tree", "categories", "recommendations"],
+      "customizable": true
+    },
+    "tool_context": {
+      "required_variables": ["system_overview", "tools_summary"],
+      "optional_variables": ["categories_detail", "usage_patterns", "integration_guidelines", "performance_notes", "security_guidelines", "examples_section"],
+      "customizable": true
+    },
+    "chained_tools": {
+      "required_variables": ["chain_name", "objective", "tool_sequence"],
+      "optional_variables": ["data_flow", "workflow_example", "error_handling"],
+      "customizable": true
+    }
+  },
+  
+  "parameter_formats": {
+    "detailed": {
+      "template": "- **{name}** ({type}){required}: {description}\n  - Constraints: {constraints}\n  - Default: {default}\n  - Example: {example}"
+    },
+    "simple": {
+      "template": "- {name} ({type}): {description}"
+    },
+    "json": {
+      "template": "\"{name}\": {\"type\": \"{type}\", \"description\": \"{description}\", \"required\": {required}}"
+    },
+    "natural": {
+      "template": "{name} ({description})"
+    },
+    "none": {
+      "template": ""
+    }
+  },
+  
+  "example_formats": {
+    "full": {
+      "include_input": true,
+      "include_output": true,
+      "include_description": true,
+      "format": "code_block"
+    },
+    "minimal": {
+      "include_input": true,
+      "include_output": false,
+      "include_description": false,
+      "format": "inline"
+    },
+    "json": {
+      "include_input": true,
+      "include_output": true,
+      "include_description": false,
+      "format": "json_block"
+    },
+    "natural": {
+      "include_input": true,
+      "include_output": true,
+      "include_description": true,
+      "format": "text"
+    }
+  },
+  
+  "categories": {
+    "file_operations": {
+      "display_name": "File Operations",
+      "description": "Tools for reading, writing, and managing files",
+      "priority": 1
+    },
+    "data_processing": {
+      "display_name": "Data Processing",
+      "description": "Tools for transforming and analyzing data",
+      "priority": 2
+    },
+    "network": {
+      "display_name": "Network",
+      "description": "Tools for network operations and API calls",
+      "priority": 3
+    },
+    "system": {
+      "display_name": "System",
+      "description": "Tools for system operations and management",
+      "priority": 4
+    },
+    "utility": {
+      "display_name": "Utility",
+      "description": "General purpose utility tools",
+      "priority": 5
+    }
+  },
+  
+  "error_handling": {
+    "error_types": {
+      "ValidationError": {
+        "severity": "medium",
+        "recovery_strategies": [
+          "Check parameter requirements",
+          "Validate data types",
+          "Ensure required parameters are provided",
+          "Check parameter constraints"
+        ]
+      },
+      "ExecutionError": {
+        "severity": "high",
+        "recovery_strategies": [
+          "Review error message",
+          "Check system state",
+          "Verify permissions",
+          "Try alternative approach"
+        ]
+      },
+      "TimeoutError": {
+        "severity": "medium",
+        "recovery_strategies": [
+          "Increase timeout",
+          "Check service availability",
+          "Break into smaller operations",
+          "Use async execution"
+        ]
+      },
+      "PermissionError": {
+        "severity": "high",
+        "recovery_strategies": [
+          "Check user permissions",
+          "Verify authentication",
+          "Request necessary access",
+          "Use alternative tool"
+        ]
+      },
+      "ResourceError": {
+        "severity": "high",
+        "recovery_strategies": [
+          "Check resource availability",
+          "Free up resources",
+          "Use resource-efficient alternative",
+          "Schedule for off-peak time"
+        ]
+      }
+    },
+    "default_strategies": [
+      "Check error message for details",
+      "Verify input parameters",
+      "Consult tool documentation",
+      "Try alternative approach"
+    ]
+  },
+  
+  "adaptive_settings": {
+    "enabled": true,
+    "initial_weights": {
+      "detailed": 1.0,
+      "concise": 1.0,
+      "examples": 1.0,
+      "structured": 1.0
+    },
+    "success_multiplier": 1.1,
+    "failure_multiplier": 0.9,
+    "history_limit": 100,
+    "min_weight": 0.1,
+    "max_weight": 10.0
+  },
+  
+  "documentation": {
+    "output_dir": "docs/tools",
+    "include_private": false,
+    "include_source": false,
+    "formats": ["markdown", "json"],
+    "sections": {
+      "overview": true,
+      "parameters": true,
+      "returns": true,
+      "examples": true,
+      "errors": true,
+      "integration": true,
+      "api_reference": true
+    }
+  },
+  
+  "performance": {
+    "cache_prompts": true,
+    "cache_ttl": 3600,
+    "max_cache_size": 100,
+    "lazy_loading": true,
+    "parallel_generation": false
+  },
+  
+  "security": {
+    "sanitize_inputs": true,
+    "redact_sensitive": true,
+    "sensitive_patterns": [
+      "password",
+      "api_key",
+      "secret",
+      "token",
+      "credential"
+    ],
+    "max_input_length": 10000,
+    "allowed_tools": null,
+    "blocked_tools": []
+  },
+  
+  "localization": {
+    "default_language": "en",
+    "supported_languages": ["en"],
+    "date_format": "YYYY-MM-DD",
+    "time_format": "HH:mm:ss",
+    "timezone": "UTC"
+  },
+  
+  "custom_templates": {},
+  
+  "feature_flags": {
+    "enable_adaptive_prompts": true,
+    "enable_documentation_generation": true,
+    "enable_prompt_caching": true,
+    "enable_security_checks": true,
+    "enable_performance_monitoring": false,
+    "enable_custom_templates": true,
+    "enable_localization": false
+  }
+}

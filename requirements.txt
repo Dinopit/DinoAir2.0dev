@@ -4,15 +4,28 @@
 PySide6>=6.6.0
 
 # Database
-sqlite3
+# Note: sqlite3 is part of Python's standard library and doesn't need to be installed via pip
+
+# System Information and Monitoring
+psutil>=5.9.0
 
 # AI/ML Libraries
 openai>=1.0.0
 anthropic>=0.8.0
+ollama>=0.1.7
+transformers>=4.35.0
+torch>=2.0.0
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Vector Search and Embeddings
+faiss-cpu>=1.7.4
 
 # Utilities
 python-dateutil>=2.8.0
 pathlib2>=2.3.0
+httpx>=0.25.0
 
 # Development
 pytest>=7.0.0

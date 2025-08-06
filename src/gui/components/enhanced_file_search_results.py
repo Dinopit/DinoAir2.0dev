@@ -257,7 +257,7 @@ class AnimatedSearchResultItem(QFrame):
     def _create_animated_button(self, text: str, tooltip: str) -> QPushButton:
         """Create a button with hover animations"""
         button = QPushButton(text)
-button.setStyleSheet("color: #FFFFFF;")
+        button.setStyleSheet("color: #FFFFFF;")
         button.setToolTip(tooltip)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setStyleSheet(self._get_button_style())

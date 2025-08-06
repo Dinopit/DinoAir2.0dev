@@ -114,6 +114,7 @@ class EnhancedChatTabWidget(QWidget):
         super().__init__()
         self.chat_db = chat_db
         self.current_session: Optional[ChatSession] = None
+        self.current_model: Optional[str] = None
         self._scaling_helper = get_scaling_helper()
         
         # Create UI
@@ -519,14 +520,21 @@ class EnhancedChatTabWidget(QWidget):
         
         # Update fixed sizes
         self.input_frame.setFixedHeight(self._scaling_helper.scaled_size(60))
-        self.send_button.setFixedSize(
-            self._scaling_helper.scaled_size(70),
-            self._scaling_helper.scaled_size(36)
-        )
+    
+    def set_current_model(self, model_name: str):
+        """Set the current model for chat interactions
         
-        # Update session bar
-        if hasattr(self, 'new_chat_button'):
-            self.new_chat_button.setFixedSize(
-                self._scaling_helper.scaled_size(90),
-                self._scaling_helper.scaled_size(28)
-            )
+        Args:
+            model_name: Name of the selected model
+        """
+        self.current_model = model_name
+        # Update UI to show current model if needed
+        # Could add model indicator in chat interface
+        
+    def get_current_model(self) -> Optional[str]:
+        """Get the currently selected model
+        
+        Returns:
+            Current model name or None if not set
+        """
+        return self.current_model

@@ -6,8 +6,8 @@ Contains the main window, pages, and reusable components
 from .main_window import MainWindow
 from .components import (
     TopBar, Sidebar, StatusBar, 
-    ArtifactsWidget, ChatInputWidget, ChatHistoryWidget, 
-    TabbedContentWidget, ChatTabWidget
+    ArtifactsWidget, ChatInputWidget, EnhancedChatHistoryWidget, 
+    TabbedContentWidget, EnhancedChatTabWidget
 )
 from .pages import NotesPage, CalendarPage, TasksPage, SettingsPage
 
@@ -18,9 +18,9 @@ __all__ = [
     'StatusBar',
     'ArtifactsWidget',
     'ChatInputWidget',
-    'ChatHistoryWidget',
+    'EnhancedChatHistoryWidget',
     'TabbedContentWidget',
-    'ChatTabWidget',
+    'EnhancedChatTabWidget',
     'NotesPage',
     'CalendarPage', 
     'TasksPage',

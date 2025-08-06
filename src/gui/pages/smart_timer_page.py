@@ -36,7 +36,7 @@ class SmartTimerPage(QWidget):
         self._current_timer_name: Optional[str] = None
         self._update_timer = QTimer()
         self._update_timer.timeout.connect(self._update_display)
-        self._update_timer.setInterval(100)  # Update every 100ms
+        self._update_timer.setInterval(1000)  # Update every 1 second (was 100ms)
         self._scaling_helper = get_scaling_helper()
         
         # Database connection
