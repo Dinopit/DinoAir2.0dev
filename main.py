@@ -39,45 +39,6 @@ except ImportError:
     ECHO_TOOL_AVAILABLE = False
 
 
-class DinoAirApp:
-    """Main application class"""
-    
-    def __init__(self):
-        self.app = None
-        self.main_window = None
-        self.config = ConfigLoader()
-        self.logger = Logger()
-        self.db_manager = None
-        self.watchdog = None
-        self.tool_registry = None
-        self.resource_manager = get_resource_manager()
-        self.container = get_container()
-        self.state_machine = get_state_machine()
-        
-        # Register basic dependencies
-        self._register_core_dependencies()
-        
-        # Set up state machine callbacks
-        self._setup_state_callbacks()
-        
-    def _register_core_dependencies(self):
-        """Register core application dependencies."""
-        # Register config and logger as instances
-        self.container.register_instance("config", self.config)
-        self.container.register_instance("logger", self.logger)
-        self.container.register_instance("resource_manager", self.resource_manager)
-        
-        # Register application services
-        self.container.register_singleton(
-            "tool_registry", 
-            ToolRegistry,
-            initialization_order=20
-        )
-        
-        # Register state machine
-        self.container.register_instance("state_machine", self.state_machine)
-
-
 def register_all_tools(adapter):
     """
     Register all tools with the ToolAdapter as specified in requirements.
@@ -130,6 +91,45 @@ def register_all_tools(adapter):
     except Exception as e:
         print(f"❌ Error registering tools: {e}")
         return False
+
+
+class DinoAirApp:
+    """Main application class"""
+    
+    def __init__(self):
+        self.app = None
+        self.main_window = None
+        self.config = ConfigLoader()
+        self.logger = Logger()
+        self.db_manager = None
+        self.watchdog = None
+        self.tool_registry = None
+        self.resource_manager = get_resource_manager()
+        self.container = get_container()
+        self.state_machine = get_state_machine()
+        
+        # Register basic dependencies
+        self._register_core_dependencies()
+        
+        # Set up state machine callbacks
+        self._setup_state_callbacks()
+        
+    def _register_core_dependencies(self):
+        """Register core application dependencies."""
+        # Register config and logger as instances
+        self.container.register_instance("config", self.config)
+        self.container.register_instance("logger", self.logger)
+        self.container.register_instance("resource_manager", self.resource_manager)
+        
+        # Register application services
+        self.container.register_singleton(
+            "tool_registry", 
+            ToolRegistry,
+            initialization_order=20
+        )
+        
+        # Register state machine
+        self.container.register_instance("state_machine", self.state_machine)
 
     def _setup_state_callbacks(self):
         """Set up state machine callbacks for logging and monitoring."""
