@@ -14,6 +14,11 @@ import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
 
+# Import the new AI-accessible tool modules
+from .notes_tool import NOTES_TOOLS
+from .file_search_tool import FILE_SEARCH_TOOLS
+from .projects_tool import PROJECTS_TOOLS
+
 
 def add_two_numbers(a: float, b: float) -> Dict[str, Any]:
     """
@@ -433,6 +438,7 @@ def create_json_data(data: Dict[str, Any],
 
 # Tool registry for discovery
 AVAILABLE_TOOLS = {
+    # Basic utility tools
     "add_two_numbers": add_two_numbers,
     "get_current_time": get_current_time,
     "list_directory_contents": list_directory_contents,
@@ -440,3 +446,8 @@ AVAILABLE_TOOLS = {
     "execute_system_command": execute_system_command,
     "create_json_data": create_json_data,
 }
+
+# Add AI-accessible GUI tool wrappers
+AVAILABLE_TOOLS.update(NOTES_TOOLS)
+AVAILABLE_TOOLS.update(FILE_SEARCH_TOOLS)
+AVAILABLE_TOOLS.update(PROJECTS_TOOLS)

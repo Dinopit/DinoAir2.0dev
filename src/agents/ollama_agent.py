@@ -191,15 +191,22 @@ class OllamaAgent(BaseAgent):
             else:
                 logger.info("Chat request without tools")
             
+            # Generate tool awareness system prompt if none provided but tools are available
+            effective_system_prompt = system_prompt
+            if not system_prompt and available_tools and use_tools:
+                # Create tool awareness system prompt
+                effective_system_prompt = self._create_tool_awareness_prompt(available_tools)
+                logger.info(f"Generated tool awareness system prompt ({len(effective_system_prompt)} chars)")
+            
             # Create model request
             request = ModelRequest(
                 prompt=message,
-                system_prompt=system_prompt,
+                system_prompt=effective_system_prompt,
                 tools=available_tools if use_tools else None,
                 stream=bool(stream_callback),
                 temperature=self.config.model_config.get('temperature'),
                 max_tokens=self.config.model_config.get('max_tokens'),
-                messages=self._get_conversation_messages(system_prompt)
+                messages=self._get_conversation_messages(effective_system_prompt)
             )
             
             # Generate response
@@ -591,6 +598,41 @@ class OllamaAgent(BaseAgent):
             
         logger.debug(f"Converted {len(tools)} tools to model format")
         return converted_tools
+
+    def _create_tool_awareness_prompt(self, tools: List[Dict[str, Any]]) -> str:
+        """Create a simple, natural tool awareness system prompt"""
+        if not tools:
+            return ""
+        
+        # Extract actual tool names
+        tool_names = []
+        for tool in tools:
+            name = tool.get('name', tool.get('tool_name', 'unknown'))
+            tool_names.append(name)
+        
+        # Sort tool names for consistency
+        tool_names.sort()
+        
+        # Create a simple, natural system prompt
+        if len(tool_names) <= 10:
+            # Show all tools if there are 10 or fewer
+            tools_list = ', '.join(tool_names)
+            system_prompt = f"""I am an AI assistant with access to these tools: {tools_list}.
+
+I can use these tools to help you with various tasks. When you ask about my capabilities, I'll mention the specific tools I can use rather than giving generic responses.
+
+I have real, actionable capabilities through these tools - I can actually perform tasks, not just provide information."""
+        else:
+            # Show first 8 tools and indicate there are more
+            featured_tools = ', '.join(tool_names[:8])
+            remaining_count = len(tool_names) - 8
+            system_prompt = f"""I am an AI assistant with access to tools including: {featured_tools}, and {remaining_count} others.
+
+I can use these tools to help you with various tasks. When you ask about my capabilities, I'll mention the specific tools I can use rather than giving generic responses.
+
+I have real, actionable capabilities through these tools - I can actually perform tasks, not just provide information."""
+        
+        return system_prompt
 
     def _format_tool_results(self, tool_results: List[Dict[str, Any]]) -> str:
         """Format tool results for context"""

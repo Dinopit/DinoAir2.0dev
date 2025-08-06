@@ -593,42 +593,33 @@ class UnifiedOllamaInterface(ModelInterface):
         
         tools_section = "\n\n".join(tool_list)
         
-        # Create comprehensive system prompt
-        system_prompt = f"""You are a smart assistant with access to external tools. Here are the tools you can use:
+        # Create direct and clear system prompt focused on tool awareness
+        tool_names = [tool['name'] for tool in tool_descriptions]
+        featured_tools = tool_names[:8]
+        
+        system_prompt = f"""I am an AI assistant with access to {len(tools)} specialized tools that greatly expand my capabilities.
 
+🔧 MY AVAILABLE TOOLS ({len(tools)} total):
+{', '.join(featured_tools)}{'...' if len(tool_descriptions) > 8 else ''}
+
+KEY CAPABILITIES:
+• Note Management: create_note, search_notes, list_all_notes, update_note, delete_note
+• File Operations: list_directory_contents, read_text_file, search_files_by_keywords
+• System Tasks: execute_system_command, get_current_time
+• Data Processing: create_json_data, add_two_numbers
+• Project Management: create_project, get_project, update_project, list_all_projects
+• And {len(tools) - 12} additional specialized tools
+
+IMPORTANT: When users ask about my capabilities or tools, I will specifically mention these tools by name rather than giving generic responses.
+
+TOOL CALLING FORMAT:
+When I need to use a tool, I respond with JSON:
+{{"tool": "tool_name", "parameters": {{"key": "value"}}}}
+
+DETAILED TOOL REFERENCE:
 {tools_section}
 
-TOOL USAGE INSTRUCTIONS:
-You can respond in two ways:
-1. Direct answer: Provide a direct response when no tools are needed
-2. Tool call: Use tools when they can help accomplish the user's request
-
-To call a tool, respond with JSON in this EXACT format:
-{{
-  "tool": "<tool_name>",
-  "parameters": {{
-    "param1": "value1",
-    "param2": "value2"
-  }}
-}}
-
-IMPORTANT RULES:
-- Use tools when they can provide accurate, helpful information
-- Always choose the most appropriate tool for the task
-- Provide clear explanations of what you're doing
-- When using tools, respond ONLY with the JSON format above
-- Do not add extra text when making tool calls
-- After receiving tool results, provide a comprehensive response to the user
-
-EXAMPLES:
-User: "What time is it?"
-Response: {{"tool": "get_current_time", "parameters": {{}}}}
-
-User: "Add 15 and 27"
-Response: {{"tool": "add_two_numbers", "parameters": {{"a": 15, "b": 27}}}}
-
-User: "List files in the current directory"
-Response: {{"tool": "list_directory_contents", "parameters": {{"path": "."}}}}"""
+I have real, actionable tools - not just the ability to provide information. I can actually create notes, read files, execute commands, manage projects, and much more using these {len(tools)} specialized tools."""
 
         return system_prompt
 

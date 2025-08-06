@@ -229,8 +229,8 @@ class ToolAIAdapter:
         registry: Optional[ToolRegistry] = None,
         formatter: Optional[ToolFormatter] = None,
         controller: Optional[ToolController] = None,
-        enable_policies: bool = True,
-        enable_restrictions: bool = True
+        enable_policies: bool = False,  # Changed default to False
+        enable_restrictions: bool = False  # Changed default to False
     ):
         """
         Initialize the adapter
@@ -247,6 +247,8 @@ class ToolAIAdapter:
         self._execution_history: List[Dict[str, Any]] = []
         self._context: Dict[str, Any] = {}
         self._current_execution_context: Optional[ExecutionContext] = None
+        self.enable_policies = enable_policies
+        self.enable_restrictions = enable_restrictions
         
         # Initialize control systems
         if enable_policies:
@@ -318,7 +320,7 @@ class ToolAIAdapter:
         category: Optional[ToolCategory] = None,
         tags: Optional[List[str]] = None,
         format_type: str = "standard",
-        apply_policies: bool = True,
+        apply_policies: Optional[bool] = None,
         context: Optional[ExecutionContext] = None
     ) -> List[Dict[str, Any]]:
         """
@@ -336,6 +338,10 @@ class ToolAIAdapter:
         """
         # Use current context if not provided
         context = context or self._current_execution_context
+        
+        # Use instance policy setting if not explicitly specified
+        if apply_policies is None:
+            apply_policies = self.enable_policies
         
         if apply_policies and self.controller:
             # Get tools filtered by policies
@@ -386,8 +392,8 @@ class ToolAIAdapter:
         invocation: Union[Dict[str, Any], str],
         track_history: bool = True,
         validate_params: bool = True,
-        check_policies: bool = True,
-        check_restrictions: bool = True,
+        check_policies: Optional[bool] = None,
+        check_restrictions: Optional[bool] = None,
         context: Optional[ExecutionContext] = None
     ) -> Dict[str, Any]:
         """
@@ -406,6 +412,12 @@ class ToolAIAdapter:
         """
         # Use current context if not provided
         context = context or self._current_execution_context
+        
+        # Use instance settings if not explicitly specified
+        if check_policies is None:
+            check_policies = self.enable_policies
+        if check_restrictions is None:
+            check_restrictions = self.enable_restrictions
         
         # Parse invocation if string
         if isinstance(invocation, str):

@@ -93,6 +93,9 @@ class ToolRegistry:
             
             # Register for tool lifecycle events
             self._setup_event_handling()
+            
+            # Auto-register function-based tools from basic_tools
+            self._auto_register_basic_tools()
     
     def _setup_event_handling(self):
         """Setup internal event handling"""
@@ -767,6 +770,135 @@ class ToolRegistry:
         
         logger.info("Tool registry shutdown complete")
     
+    def _auto_register_basic_tools(self):
+        """
+        Automatically register function-based tools from basic_tools module
+        
+        This method bridges the gap between legacy function-based tools
+        and the new class-based tool system by automatically wrapping
+        and registering all tools from basic_tools.AVAILABLE_TOOLS.
+        """
+        try:
+            # Import function wrapper and basic tools
+            from .function_wrapper import wrap_available_tools
+            from .basic_tools import AVAILABLE_TOOLS
+            
+            logger.info(
+                f"Auto-registering {len(AVAILABLE_TOOLS)} "
+                f"function-based tools..."
+            )
+            
+            # Wrap all available tools
+            wrapped_tools = wrap_available_tools(AVAILABLE_TOOLS)
+            
+            # Register each wrapped tool
+            registered_count = 0
+            for tool_name, wrapped_tool in wrapped_tools.items():
+                try:
+                    # Register the wrapped tool instance directly
+                    success = self.register_tool_instance(
+                        wrapped_tool,
+                        name=tool_name
+                    )
+                    if success:
+                        registered_count += 1
+                        logger.debug(f"Auto-registered tool: {tool_name}")
+                    else:
+                        logger.warning(
+                            f"Failed to auto-register tool: {tool_name}"
+                        )
+                except Exception as e:
+                    logger.error(
+                        f"Error auto-registering tool '{tool_name}': {e}"
+                    )
+            
+            logger.info(
+                f"Successfully auto-registered {registered_count}/"
+                f"{len(AVAILABLE_TOOLS)} function-based tools"
+            )
+            
+        except ImportError as e:
+            logger.warning(
+                f"Could not import basic_tools for auto-registration: {e}"
+            )
+        except Exception as e:
+            logger.error(f"Error during auto-registration: {e}")
+    
+    def register_tool_instance(
+        self,
+        tool_instance: BaseTool,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None
+    ) -> bool:
+        """
+        Register an already instantiated tool
+        
+        Args:
+            tool_instance: The tool instance to register
+            name: Optional name override
+            tags: Optional additional tags
+            
+        Returns:
+            True if successfully registered
+        """
+        try:
+            if not tool_instance.metadata:
+                logger.error(
+                    f"Tool instance {tool_instance.__class__.__name__} "
+                    f"has no metadata"
+                )
+                return False
+            
+            # Use provided name or metadata name
+            tool_name = name or tool_instance.metadata.name
+            
+            # Check if already registered
+            if tool_name in self._tools:
+                logger.warning(
+                    f"Tool '{tool_name}' is already registered"
+                )
+                return False
+            
+            # Create registration with existing instance
+            registration = ToolRegistration(
+                tool_class=tool_instance.__class__,
+                metadata=tool_instance.metadata,
+                instance=tool_instance,  # Use existing instance
+                config={},
+                is_singleton=True,  # Mark as singleton since we have instance
+                tags=set(tags or [])
+            )
+            
+            # Add metadata tags
+            registration.tags.update(tool_instance.metadata.tags)
+            
+            # Register the tool
+            with self._lock:
+                self._tools[tool_name] = registration
+                category = tool_instance.metadata.category
+                self._categories[category].add(tool_name)
+                
+                # Update tag index
+                for tag in registration.tags:
+                    self._tags[tag].add(tool_name)
+            
+            # Connect tool events
+            self._connect_tool_events(tool_instance)
+            
+            logger.info(
+                f"Registered tool instance '{tool_name}' "
+                f"(category: {tool_instance.metadata.category.value})"
+            )
+            
+            return True
+            
+        except Exception as e:
+            logger.error(
+                f"Failed to register tool instance "
+                f"{tool_instance.__class__.__name__}: {e}"
+            )
+            return False
+
     def set_controller(self, controller: Optional[ToolController]):
         """
         Set the tool controller for policy enforcement

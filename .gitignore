@@ -343,6 +343,18 @@ recent_chats
 *.diff
 watchdog_patches.txt
 
+# Test result files and development artifacts
+*_test_report_*.json
+*_test_results_*.json
+*_pipeline_test_results_*.json
+*_integration_test_*.json
+agent_removal_diagnostic.py
+simple_agent_test.py
+integration_test_model_registry.py
+comprehensive_integration_test.py
+test_signal_timing_fix.py
+prove_ai_awareness_fix.py
+
 # Development notes and guides
 Project\ directory\ guide.txt
 GUI_INTEGRATION_SUMMARY.md
