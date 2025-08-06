@@ -13,6 +13,8 @@ from PySide6.QtCore import (
     QEasingCurve
 )
 
+from ...utils.scaling import get_scaling_helper
+
 
 class AnimatedProgressBar(QProgressBar):
     """Progress bar with smooth animated value transitions"""
@@ -20,8 +22,9 @@ class AnimatedProgressBar(QProgressBar):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._animation = QPropertyAnimation(self, b"value")
-        self._animation.setDuration(150)  # Reduced from 250ms to 150ms
-        self._animation.setEasingCurve(QEasingCurve.Type.Linear)  # Linear is less CPU intensive
+        self._animation.setDuration(150)  # Optimized timing for responsiveness
+        # Linear is less CPU intensive
+        self._animation.setEasingCurve(QEasingCurve.Type.Linear)
         self._target_value = 0
         self._last_update_time = 0
         
@@ -60,6 +63,7 @@ class MetricDisplay(QFrame):
         self.label_text = label
         self.unit = unit
         self.show_progress = show_progress
+        self._scaling_helper = get_scaling_helper()
         self._setup_ui()
         
     def _setup_ui(self):
@@ -76,28 +80,32 @@ class MetricDisplay(QFrame):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(8)
         
-        # Metric label
+        # Metric label with scaled typography
         self.label = QLabel(self.label_text + ":")
-        self.label.setStyleSheet("""
-            QLabel {
+        label_font_size = self._scaling_helper.get_font_for_role('caption')
+        self.label.setStyleSheet(f"""
+            QLabel {{
                 color: #B0B0B0;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: {label_font_size}px;
                 background: transparent;
-            }
+            }}
         """)
         layout.addWidget(self.label)
         
-        # Value label
+        # Value label with scaled typography
         self.value_label = QLabel("0" + self.unit)
-        self.value_label.setStyleSheet("""
-            QLabel {
+        value_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
+        self.value_label.setStyleSheet(f"""
+            QLabel {{
                 color: #3498db;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: {value_font_size}px;
                 background: transparent;
                 min-width: 60px;
-            }
+            }}
         """)
         layout.addWidget(self.value_label)
         
@@ -153,6 +161,7 @@ class ProcessCountDisplay(QFrame):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._scaling_helper = get_scaling_helper()
         self._setup_ui()
         
     def _setup_ui(self):
@@ -168,28 +177,32 @@ class ProcessCountDisplay(QFrame):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(8)
         
-        # Label
+        # Label with scaled typography
         self.label = QLabel("Processes:")
-        self.label.setStyleSheet("""
-            QLabel {
+        label_font_size = self._scaling_helper.get_font_for_role('caption')
+        self.label.setStyleSheet(f"""
+            QLabel {{
                 color: #B0B0B0;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: {label_font_size}px;
                 background: transparent;
-            }
+            }}
         """)
         layout.addWidget(self.label)
         
-        # Count display
+        # Count display with scaled typography
         self.count_label = QLabel("0 / 0")
-        self.count_label.setStyleSheet("""
-            QLabel {
+        count_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
+        self.count_label.setStyleSheet(f"""
+            QLabel {{
                 color: #3498db;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: {count_font_size}px;
                 background: transparent;
                 min-width: 50px;
-            }
+            }}
         """)
         layout.addWidget(self.count_label)
         
@@ -206,11 +219,14 @@ class ProcessCountDisplay(QFrame):
         else:
             color = "#F44336"  # Red
             
+        count_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
         self.count_label.setStyleSheet(f"""
             QLabel {{
                 color: {color};
                 font-weight: bold;
-                font-size: 13px;
+                font-size: {count_font_size}px;
                 background: transparent;
                 min-width: 50px;
             }}
@@ -222,6 +238,7 @@ class UptimeDisplay(QFrame):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._scaling_helper = get_scaling_helper()
         self._setup_ui()
         
     def _setup_ui(self):
@@ -237,29 +254,33 @@ class UptimeDisplay(QFrame):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(8)
         
-        # Label
+        # Label with scaled typography
         self.label = QLabel("Uptime:")
-        self.label.setStyleSheet("""
-            QLabel {
+        label_font_size = self._scaling_helper.get_font_for_role('caption')
+        self.label.setStyleSheet(f"""
+            QLabel {{
                 color: #B0B0B0;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: {label_font_size}px;
                 background: transparent;
-            }
+            }}
         """)
         layout.addWidget(self.label)
         
-        # Time display
+        # Time display with scaled typography
         self.time_label = QLabel("00:00")
-        self.time_label.setStyleSheet("""
-            QLabel {
+        time_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
+        self.time_label.setStyleSheet(f"""
+            QLabel {{
                 color: #3498db;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: {time_font_size}px;
                 font-family: monospace;
                 background: transparent;
                 min-width: 50px;
-            }
+            }}
         """)
         layout.addWidget(self.time_label)
         

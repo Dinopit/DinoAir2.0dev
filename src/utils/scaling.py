@@ -205,6 +205,46 @@ class ScalingHelper(QObject):
     def reset_zoom(self) -> None:
         """Reset zoom level to default (100%)"""
         self.set_zoom_level(self.DEFAULT_ZOOM)
+    
+    def get_font_scale(self) -> dict:
+        """Return systematic font scale for consistent typography
+        
+        Returns:
+            dict: Font scale mapping with xs, sm, base, lg, xl, 2xl sizes
+        """
+        base_size = 16  # Increased from 14 to 16 for better readability
+        return {
+            'xs': self.scaled_font_size(10),
+            'sm': self.scaled_font_size(12),
+            'base': self.scaled_font_size(base_size),
+            'lg': self.scaled_font_size(18),
+            'xl': self.scaled_font_size(20),
+            '2xl': self.scaled_font_size(24)
+        }
+    
+    def get_dpi_scale(self) -> float:
+        """Get the current DPI scale factor"""
+        return self._scale_factor
+
+    def get_font_for_role(self, role: str) -> int:
+        """Get appropriate font size for UI role
+        
+        Args:
+            role: UI role identifier (e.g., 'heading_primary', 'body_primary')
+            
+        Returns:
+            int: Scaled font size for the specified role
+        """
+        scale = self.get_font_scale()
+        role_map = {
+            'heading_primary': scale['2xl'],
+            'heading_secondary': scale['xl'],
+            'heading_tertiary': scale['lg'],
+            'body_primary': scale['base'],
+            'body_secondary': scale['sm'],
+            'caption': scale['xs']
+        }
+        return role_map.get(role, scale['base'])
 
 
 # Global instance for easy access

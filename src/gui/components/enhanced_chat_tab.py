@@ -13,11 +13,15 @@ from PySide6.QtWidgets import (
     QPushButton, QScrollArea, QLabel, QFrame, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeySequence, QShortcut
 
-from ...models.chat_session import ChatSession, ChatMessage
+from ...models.chat_session import ChatSession
 from ...database.chat_history_db import ChatHistoryDatabase
 from ...utils.colors import DinoPitColors
 from ...utils.scaling import get_scaling_helper
+from .loading_components import (
+    TypingIndicator, MessageSendIndicator
+)
 
 
 class ChatMessageWidget(QFrame):
@@ -83,10 +87,17 @@ class ChatMessageWidget(QFrame):
             self._scaling_helper.scaled_size(10)
         )
         
-        # Create message label
+        # Create message label with improved typography
         message_label = QLabel(message)
         message_label.setWordWrap(True)
-        message_label.setStyleSheet("border: none; background: transparent;")
+        # Use new font scale system for 16px base font size
+        font_size = self._scaling_helper.get_font_for_role('body_primary')
+        message_label.setStyleSheet(f"""
+            border: none;
+            background: transparent;
+            font-size: {font_size}px;
+            line-height: 1.5;
+        """)
         # Prevent HTML injection
         message_label.setTextFormat(Qt.TextFormat.PlainText)
         
@@ -116,6 +127,10 @@ class EnhancedChatTabWidget(QWidget):
         self.current_session: Optional[ChatSession] = None
         self.current_model: Optional[str] = None
         self._scaling_helper = get_scaling_helper()
+        
+        # Loading and feedback components
+        self._typing_indicator: Optional[TypingIndicator] = None
+        self._message_send_indicator: Optional[MessageSendIndicator] = None
         
         # Create UI
         self._setup_ui()
@@ -185,7 +200,10 @@ class EnhancedChatTabWidget(QWidget):
         
         # Create input field
         self.input_field = QLineEdit()
-        self.input_field.setStyleSheet("color: #FFFFFF; background-color: #2B3A52; border: 1px solid #4A5A7A; padding: 5px;")
+        self.input_field.setStyleSheet(
+            "color: #FFFFFF; background-color: #2B3A52; "
+            "border: 1px solid #4A5A7A; padding: 5px;"
+        )
         self.input_field.setPlaceholderText("Type your message here...")
         self._update_input_field_style()
         
@@ -207,10 +225,14 @@ class EnhancedChatTabWidget(QWidget):
         input_layout.addWidget(self.input_field)
         input_layout.addWidget(self.send_button)
         
+        # Create message send indicator
+        self._message_send_indicator = MessageSendIndicator()
+        
         # Add widgets to main layout
         self.main_layout.addWidget(self.session_bar)
         # Give more space to chat area
         self.main_layout.addWidget(self.chat_scroll, 1)
+        self.main_layout.addWidget(self._message_send_indicator)
         self.main_layout.addWidget(self.input_frame)
         
         # Initially disable send button
@@ -233,12 +255,15 @@ class EnhancedChatTabWidget(QWidget):
             self._scaling_helper.scaled_size(5)
         )
         
-        # Session title label
+        # Session title label with improved typography
         self.session_title_label = QLabel("New Chat")
+        title_font_size = self._scaling_helper.get_font_for_role(
+            'heading_tertiary'
+        )
         self.session_title_label.setStyleSheet(f"""
             color: {DinoPitColors.PRIMARY_TEXT};
             font-weight: bold;
-            font-size: {self._scaling_helper.scaled_font_size(14)}px;
+            font-size: {title_font_size}px;
         """)
         
         # New chat button
@@ -247,20 +272,26 @@ class EnhancedChatTabWidget(QWidget):
             self._scaling_helper.scaled_size(90),
             self._scaling_helper.scaled_size(28)
         )
+        button_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
         self.new_chat_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {DinoPitColors.DINOPIT_ORANGE};
                 color: white;
                 border: none;
                 border-radius: {self._scaling_helper.scaled_size(14)}px;
-                font-size: {self._scaling_helper.scaled_font_size(12)}px;
+                font-size: {button_font_size}px;
                 font-weight: bold;
+                transition: all 150ms ease-in-out;
             }}
             QPushButton:hover {{
                 background-color: {DinoPitColors.DINOPIT_FIRE};
+                transform: translateY(-1px);
             }}
             QPushButton:pressed {{
                 background-color: #E55A2B;
+                transform: translateY(0px);
             }}
         """)
         self.new_chat_button.clicked.connect(self._on_new_chat_clicked)
@@ -369,8 +400,15 @@ class EnhancedChatTabWidget(QWidget):
         message = self.input_field.text().strip()
         
         if message and self.current_session:
+            # Show sending indicator
+            if self._message_send_indicator:
+                self._message_send_indicator.set_sending()
+            
             # Add user message to chat
             self.add_message(message, is_user=True)
+            
+            # Show typing indicator for AI response
+            self.show_typing_indicator()
             
             # Emit the message_sent signal
             self.message_sent.emit(message)
@@ -380,6 +418,10 @@ class EnhancedChatTabWidget(QWidget):
             
             # Disable the send button
             self.send_button.setEnabled(False)
+            
+            # Show message sent confirmation
+            if self._message_send_indicator:
+                self._message_send_indicator.set_sent()
             
             # Scroll to bottom
             self.scroll_to_bottom()
@@ -393,6 +435,10 @@ class EnhancedChatTabWidget(QWidget):
             is_user: True if message is from user, False if from assistant
             save_to_db: Whether to save this message to database
         """
+        # Hide typing indicator when adding AI message
+        if not is_user:
+            self.hide_typing_indicator()
+            
         # Create message widget
         message_widget = ChatMessageWidget(message, is_user)
         self.chat_layout.addWidget(message_widget)
@@ -407,6 +453,9 @@ class EnhancedChatTabWidget(QWidget):
             if not result.get("success"):
                 # Log error but don't interrupt user experience
                 print(f"Failed to save message: {result.get('error')}")
+                # Show error in send indicator
+                if self._message_send_indicator:
+                    self._message_send_indicator.set_error("Failed to save")
         
         # Scroll to bottom after adding message
         self.scroll_to_bottom()
@@ -467,7 +516,10 @@ class EnhancedChatTabWidget(QWidget):
         """)
         
     def _update_input_field_style(self):
-        """Update input field style"""
+        """Update input field style with improved typography"""
+        input_font_size = self._scaling_helper.get_font_for_role(
+            'body_primary'
+        )
         self.input_field.setStyleSheet(f"""
             QLineEdit {{
                 border: 1px solid {DinoPitColors.SOFT_ORANGE};
@@ -475,7 +527,7 @@ class EnhancedChatTabWidget(QWidget):
                 padding: {self._scaling_helper.scaled_size(8)}px;
                 padding-left: {self._scaling_helper.scaled_size(15)}px;
                 padding-right: {self._scaling_helper.scaled_size(15)}px;
-                font-size: {self._scaling_helper.scaled_font_size(14)}px;
+                font-size: {input_font_size}px;
                 background-color: {DinoPitColors.MAIN_BACKGROUND};
                 color: {DinoPitColors.PRIMARY_TEXT};
             }}
@@ -488,25 +540,38 @@ class EnhancedChatTabWidget(QWidget):
         """)
         
     def _update_send_button_style(self):
-        """Update send button style"""
+        """Update send button style with improved typography"""
+        send_button_font_size = self._scaling_helper.get_font_for_role(
+            'body_primary'
+        )
         self.send_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {DinoPitColors.DINOPIT_ORANGE};
                 color: white;
                 border: none;
                 border-radius: {self._scaling_helper.scaled_size(18)}px;
-                font-size: {self._scaling_helper.scaled_font_size(14)}px;
+                font-size: {send_button_font_size}px;
                 font-weight: bold;
+                min-height: {self._scaling_helper.scaled_size(36)}px;
+                padding: {self._scaling_helper.scaled_size(8)}px
+                         {self._scaling_helper.scaled_size(16)}px;
+                transition: all 150ms ease-in-out;
             }}
             QPushButton:hover {{
                 background-color: {DinoPitColors.DINOPIT_FIRE};
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             }}
             QPushButton:pressed {{
                 background-color: #E55A2B;
+                transform: translateY(0px);
+                box-shadow: none;
             }}
             QPushButton:disabled {{
                 background-color: #666666;
                 color: #999999;
+                transform: none;
+                box-shadow: none;
             }}
         """)
         
@@ -538,3 +603,58 @@ class EnhancedChatTabWidget(QWidget):
             Current model name or None if not set
         """
         return self.current_model
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for enhanced user experience"""
+        # Ctrl+N: New chat
+        self.new_chat_shortcut = QShortcut(
+            QKeySequence("Ctrl+N"), self
+        )
+        self.new_chat_shortcut.activated.connect(self._on_new_chat_clicked)
+        
+        # Ctrl+Enter: Send message (alternative to Enter)
+        self.send_message_shortcut = QShortcut(
+            QKeySequence("Ctrl+Return"), self
+        )
+        self.send_message_shortcut.activated.connect(self.send_message)
+        
+        # Escape: Clear input field
+        self.clear_input_shortcut = QShortcut(
+            QKeySequence("Escape"), self
+        )
+        self.clear_input_shortcut.activated.connect(self._clear_input)
+        
+        # Ctrl+L: Focus input field
+        self.focus_input_shortcut = QShortcut(
+            QKeySequence("Ctrl+L"), self
+        )
+        self.focus_input_shortcut.activated.connect(self._focus_input)
+
+    def _clear_input(self):
+        """Clear the input field"""
+        self.input_field.clear()
+        self.input_field.setFocus()
+
+    def _focus_input(self):
+        """Focus the input field"""
+        self.input_field.setFocus()
+
+    def show_typing_indicator(self):
+        """Show the typing indicator for AI responses"""
+        if self._typing_indicator is None:
+            self._typing_indicator = TypingIndicator()
+            
+        # Add typing indicator to chat
+        self.chat_layout.addWidget(self._typing_indicator)
+        self._typing_indicator.start_animation()
+        
+        # Scroll to bottom to show typing indicator
+        self.scroll_to_bottom()
+        
+    def hide_typing_indicator(self):
+        """Hide the typing indicator"""
+        if self._typing_indicator is not None:
+            self._typing_indicator.stop_animation()
+            self.chat_layout.removeWidget(self._typing_indicator)
+            self._typing_indicator.setParent(None)
+            self._typing_indicator = None

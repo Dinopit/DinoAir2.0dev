@@ -20,8 +20,77 @@ from src.utils.state_machine import get_state_machine, ApplicationState, transit
 from src.database import initialize_user_databases
 from src.gui import MainWindow
 from src.tools.registry import ToolRegistry
-from src.tools.registry.tool_adapter import ToolAdapter, TOOL_REGISTRY, create_production_tool_adapter
-from src.tools.examples.echo_tool import echo_tool
+# Conditional tool imports for compatibility across branches
+try:
+    from src.tools.registry.tool_adapter import ToolAdapter, TOOL_REGISTRY, create_production_tool_adapter
+    TOOL_ADAPTER_AVAILABLE = True
+except ImportError:
+    # Fallback for backup branch - tools not critical for GUI launch
+    ToolAdapter = None
+    TOOL_REGISTRY = {}
+    create_production_tool_adapter = None
+    TOOL_ADAPTER_AVAILABLE = False
+
+try:
+    from src.tools.examples.echo_tool import echo_tool
+    ECHO_TOOL_AVAILABLE = True
+except ImportError:
+    echo_tool = None
+    ECHO_TOOL_AVAILABLE = False
+
+
+def register_all_tools(adapter):
+    """
+    Register all tools with the ToolAdapter as specified in requirements.
+    
+    This function implements the exact pattern requested by the user for
+    explicit tool registration in the execution pipeline.
+    
+    Args:
+        adapter: ToolAdapter instance to register tools with (if available)
+    """
+    if not TOOL_ADAPTER_AVAILABLE or adapter is None:
+        print("⚠️  Tool adapter not available on this branch")
+        return False
+        
+    try:
+        # Register echo_tool for testing and validation
+        if ECHO_TOOL_AVAILABLE and echo_tool:
+            adapter.register_tool("echo_tool", echo_tool)
+        
+        # Import and register note tools if available
+        try:
+            from src.tools.integration.note_tools import save_note
+            adapter.register_tool("note_tool.save_note", save_note)
+        except ImportError:
+            pass  # Note tools not available
+        
+        # Import and register other core tools as they become available
+        try:
+            from src.tools.examples.basic_math_tool import basic_math_tool
+            adapter.register_tool("basic_math_tool", basic_math_tool)
+        except ImportError:
+            pass
+            
+        try:
+            from src.tools.examples.time_tool import time_tool
+            adapter.register_tool("time_tool", time_tool)
+        except ImportError:
+            pass
+        
+        # Auto-discover additional tools from the production registry
+        if TOOL_REGISTRY:
+            for tool_name, tool_func in TOOL_REGISTRY.items():
+                if not adapter.is_tool_registered(tool_name):
+                    adapter.register_tool(tool_name, tool_func)
+        
+        tool_count = len(adapter.list_tools()) if hasattr(adapter, 'list_tools') else 0
+        print(f"✅ Registered {tool_count} tools successfully")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error registering tools: {e}")
+        return False
 
 
 class DinoAirApp:
@@ -62,55 +131,6 @@ class DinoAirApp:
         # Register state machine
         self.container.register_instance("state_machine", self.state_machine)
 
-
-def register_all_tools(adapter: ToolAdapter):
-    """
-    Register all tools with the ToolAdapter as specified in requirements.
-    
-    This function implements the exact pattern requested by the user for
-    explicit tool registration in the execution pipeline.
-    
-    Args:
-        adapter: ToolAdapter instance to register tools with
-    """
-    try:
-        # Register echo_tool for testing and validation
-        adapter.register_tool("echo_tool", echo_tool)
-        
-        # Import and register note tools if available
-        try:
-            from src.tools.integration.note_tools import save_note
-            adapter.register_tool("note_tool.save_note", save_note)
-        except ImportError:
-            pass  # Note tools not available
-        
-        # Import and register other core tools as they become available
-        try:
-            from src.tools.examples.basic_math_tool import basic_math_tool
-            adapter.register_tool("basic_math_tool", basic_math_tool)
-        except ImportError:
-            pass
-            
-        try:
-            from src.tools.examples.time_tool import time_tool
-            adapter.register_tool("time_tool", time_tool)
-        except ImportError:
-            pass
-        
-        # Auto-discover additional tools from the production registry
-        from src.tools.registry.tool_adapter import TOOL_REGISTRY
-        for tool_name, tool_func in TOOL_REGISTRY.items():
-            if not adapter.is_tool_registered(tool_name):
-                adapter.register_tool(tool_name, tool_func)
-        
-        print(f"✅ Registered {len(adapter.list_tools())} tools successfully")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error registering tools: {e}")
-        return False
-
-        
     def _setup_state_callbacks(self):
         """Set up state machine callbacks for logging and monitoring."""
         def log_state_entry(state, from_state, context):
