@@ -18,6 +18,7 @@ from .unified_ollama_interface import UnifiedOllamaInterface
 from ..tools.abstraction.model_interface import ModelRequest, ModelResponse
 from ..tools.registry import ToolRegistry
 from ..tools.ai_adapter import ToolAIAdapter
+from ..tools.registry.tool_adapter import ToolAdapter, TOOL_REGISTRY
 from ..tools.control.tool_context import (
     ExecutionContext, UserContext, TaskContext, EnvironmentContext,
     TaskType, Environment, UserRole
@@ -85,6 +86,9 @@ class OllamaAgent(BaseAgent):
         # Tool execution state
         self._execution_context: Optional[ExecutionContext] = None
         self._conversation_history: List[Dict[str, str]] = []
+        
+        # Initialize ToolAdapter for direct tool execution
+        self.tool_adapter_direct = ToolAdapter(tool_registry=TOOL_REGISTRY.copy())
         
     async def initialize(self) -> bool:
         """Initialize the agent and its components"""
@@ -473,10 +477,11 @@ class OllamaAgent(BaseAgent):
         return messages
     
     async def _handle_tool_calls(self, tool_calls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Handle tool calls from the model"""
-        if not self.tool_adapter or not self._execution_context:
+        """Handle tool calls from the model using bulletproof ToolAdapter execution"""
+        if not tool_calls:
             return []
         
+        logger.info(f"Handling {len(tool_calls)} tool calls")
         results = []
         
         for tool_call in tool_calls:
@@ -485,45 +490,54 @@ class OllamaAgent(BaseAgent):
                 parameters = tool_call.get("parameters", {})
                 
                 if not tool_name:
+                    logger.warning("Tool call missing name, skipping")
+                    results.append({
+                        "tool_name": "unknown",
+                        "parameters": parameters,
+                        "result": {"error": "Tool call missing name", "success": False},
+                        "success": False
+                    })
                     continue
                 
-                # Execute the tool with timeout protection
-                import asyncio
-                try:
-                    # Create invocation dict for execute_tool
-                    invocation = {
-                        "name": tool_name,
-                        "parameters": parameters
-                    }
-                    
-                    result = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            self.tool_adapter.execute_tool,
-                            invocation=invocation,
-                            context=self._execution_context
-                        ),
-                        timeout=30.0  # 30 second timeout per tool
-                    )
-                except asyncio.TimeoutError:
-                    logger.error(f"Tool {tool_name} timed out")
-                    result = {"error": "Tool execution timed out", "success": False}
+                logger.info(f"Executing tool: {tool_name}")
                 
-                results.append({
+                # Use ToolAdapter for bulletproof execution
+                result = await self.tool_adapter_direct.execute_tool_async(
+                    name=tool_name,
+                    parameters=parameters,
+                    timeout=30.0
+                )
+                
+                # Format result for consistency
+                formatted_result = {
                     "tool_name": tool_name,
                     "parameters": parameters,
                     "result": result,
                     "success": result.get("success", False)
-                })
+                }
+                
+                results.append(formatted_result)
+                
+                if result.get("success"):
+                    logger.info(f"Tool {tool_name} executed successfully")
+                else:
+                    error_msg = result.get("error", "Unknown error")
+                    logger.warning(f"Tool {tool_name} failed: {error_msg}")
                 
             except Exception as e:
-                logger.error(f"Tool execution failed for {tool_call}: {e}")
+                logger.error(f"Unexpected error handling tool call {tool_call}: {e}")
                 results.append({
                     "tool_name": tool_call.get("name", "unknown"),
                     "parameters": tool_call.get("parameters", {}),
-                    "result": {"error": str(e)},
+                    "result": {
+                        "error": f"Handler error: {str(e)}",
+                        "success": False,
+                        "error_type": "HandlerError"
+                    },
                     "success": False
                 })
         
+        logger.info(f"Tool execution completed: {sum(1 for r in results if r['success'])}/{len(results)} successful")
         return results
     
     def _convert_tools_to_model_format(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -680,26 +694,28 @@ I have real, actionable capabilities through these tools - I can actually perfor
         )
     
     async def _execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a tool (callback for model adapter)"""
-        if not self.tool_adapter or not self._execution_context:
-            return {"error": "Tool execution not available"}
-        
+        """Execute a tool (callback for model adapter) using ToolAdapter"""
         try:
-            # Create invocation dict for execute_tool
-            invocation = {
-                "name": tool_name,
-                "parameters": parameters
-            }
+            logger.info(f"Callback executing tool: {tool_name}")
             
-            # execute_tool is synchronous, so run it in a thread
-            return await asyncio.to_thread(
-                self.tool_adapter.execute_tool,
-                invocation=invocation,
-                context=self._execution_context
+            # Use ToolAdapter for bulletproof execution
+            result = await self.tool_adapter_direct.execute_tool_async(
+                name=tool_name,
+                parameters=parameters,
+                timeout=30.0
             )
+            
+            logger.info(f"Callback tool execution completed for {tool_name}: {result.get('success', False)}")
+            return result
+            
         except Exception as e:
-            logger.error(f"Tool execution callback failed: {e}")
-            return {"error": str(e)}
+            logger.error(f"Tool execution callback failed for {tool_name}: {e}")
+            return {
+                "error": f"Callback error: {str(e)}",
+                "success": False,
+                "error_type": "CallbackError",
+                "timestamp": datetime.now().isoformat()
+            }
 
 
 def create_ollama_agent(
