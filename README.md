@@ -5,6 +5,36 @@
 [![Production Ready](https://img.shields.io/badge/status-production%20ready-brightgreen.svg)](https://github.com/Dinopit/DinoAir2.0dev)
 [![Test Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen.svg)](#testing-and-validation)
 
+🧠 DinoAir 2.0 — First Issue Bounty
+
+Help me improve DinoAir 2.0, and I’ll help you train your next model.
+
+🛠️ The Deal:
+
+Be the first user to submit a meaningful bug report, feature suggestion, or pull request that gets accepted into DinoAir 2.0…
+
+…and you’ll get:
+	•	1 hour of pod time (RunPod, Vast.ai, or a comparable platform)
+	•	Either:
+	•	A fully preconfigured pod with the model/tooling of your choice ready to run (so you don’t waste setup time)
+	•	or raw compute credits if you prefer full control
+
+💬 What Counts?
+	•	Clear bug reports that lead to a fix
+	•	Pull requests that improve functionality, security, or dev experience
+	•	Suggestions that lead to structural/UX improvements
+
+🚫 What Doesn’t Count:
+	•	Typos, formatting, or “you missed a semicolon” nitpicks
+	•	Feature creep ideas that don’t align with DinoAir’s core local assistant mission
+
+⸻
+
+To claim: Just open an issue or PR and mention that you’re gunning for the bounty.
+First accepted submission wins. I’ll DM you the pod setup link or credit handoff after merge.
+
+🦖 Let’s see what you break
+
 A production-ready, AI-powered desktop application with comprehensive tool integration, advanced LLM capabilities, and optimized performance architecture. Built with PySide6 and featuring a unified Ollama interface for seamless AI assistance.
 
 **Open Source | No Fees | No Hidden Code | Completely Yours**
