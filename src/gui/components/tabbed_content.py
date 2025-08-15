@@ -268,10 +268,11 @@ class TabbedContentWidget(QWidget):
         self._update_tab_widget_style()
     
     def on_tab_changed(self, index):
-        """Handle tab change event.
+        """
+        Handle a tab change event by logging the newly selected tab's name.
         
-        Args:
-            index (int): The index of the newly selected tab
+        Parameters:
+            index (int): Index of the newly selected tab.
         """
         tab_name = self.tabs[index]['label']
         logger = Logger()
@@ -279,10 +280,16 @@ class TabbedContentWidget(QWidget):
         # In a real application, this would handle tab-specific logic
     
     def handle_chat_message(self, message):
-        """Handle chat message from the chat tab.
+        """
+        Process a user chat message: sanitize it, forward it to the active chat widget, obtain an AI response, and display results.
         
-        Args:
-            message (str): The chat message sent by the user
+        This method selects the enhanced chat tab if present (otherwise falls back to the first tab), runs the input through the configured InputPipeline (which may modify the message and returns a detected intent), and appends messages to the chat widget. If the pipeline modifies the input the sanitized form is shown to the user. The method then obtains an AI response via _generate_ai_response and displays it. Security violations raised by the input pipeline (InputPipelineError) and other runtime errors are caught, logged, and converted into user-visible error or alert messages appended to the chat widget; no exceptions are propagated to the caller.
+        
+        Parameters:
+            message (str): Raw message text entered by the user.
+        
+        Returns:
+            None
         """
         import logging
         logger = logging.getLogger(__name__)
@@ -546,20 +553,28 @@ class TabbedContentWidget(QWidget):
         return self.settings_page
     
     def _security_feedback(self, message: str):
-        """Handle security feedback from the InputPipeline.
+        """
+        Handle security feedback from the InputPipeline by recording a warning.
         
-        Args:
-            message (str): Security feedback message
+        This method is invoked by the input sanitization pipeline when a security-related
+        condition is detected (e.g., rejected input, policy violation). It logs the
+        provided message as a security warning and can be extended to surface alerts
+        to the UI (status bar, notifications) or trigger additional monitoring.
+        
+        Parameters:
+            message (str): Human-readable security message describing the issue.
         """
         logger = Logger()
         logger.warning(f"[Security] {message}")
         # In a real app, this could update a status bar or show notifications
         
     def set_main_window_ref(self, main_window):
-        """Set reference to main window for InputPipeline.
+        """
+        Set the main window reference on the input pipeline.
         
-        Args:
-            main_window: The main window instance
+        If an InputPipeline instance is present, stores the provided main window on
+        its `main_window_ref` attribute so the pipeline can interact with the GUI.
+        If no input pipeline is configured, this method is a no-op.
         """
         if self.input_pipeline:
             self.input_pipeline.main_window_ref = main_window

@@ -369,7 +369,18 @@ class HelpPage(QWidget):
         return panel
     
     def _initialize_help_content(self) -> Dict[str, Dict]:
-        """Initialize the help content structure"""
+        """
+        Return the static nested help content structure used by the HelpPage.
+        
+        The structure is a dictionary mapping topic keys to metadata dictionaries containing:
+        - "title" (str): visible topic title,
+        - optional "icon" (str): emoji used in the TOC,
+        - either "content" (str): HTML fragment to render in the content viewer, or
+          "subsections" (dict): mapping subsection keys to dictionaries with "title" and "content".
+        
+        Returns:
+            Dict[str, Dict]: Nested dictionary of help sections, subsections, and HTML content.
+        """
         return {
             "getting_started": {
                 "title": "Getting Started",

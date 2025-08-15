@@ -802,7 +802,19 @@ class ModelPage(QWidget):
                 self._refresh_models()
     
     def _auto_start_service(self):
-        """Automatically start the Ollama service"""
+        """
+        Attempt to start the Ollama service automatically and update UI/state.
+        
+        If an Ollama wrapper is available, calls its start_service() method. On success it refreshes the service status and model list, shows a transient green success message in the download_status label (hidden after 5 seconds), and logs the outcome. On failure it updates the service status, displays an orange warning message in download_status, and logs the failure.
+        
+        Side effects:
+        - Calls self.ollama_wrapper.start_service().
+        - Updates internal service status and model list via _update_service_status() and _refresh_models().
+        - Modifies the download_status widget text, visibility, and stylesheet; sets a QTimer to hide the success message after 5 seconds.
+        - Emits log entries (info/error).
+        
+        No value is returned.
+        """
         if self.ollama_wrapper:
             logger.info("[ModelPage] Auto-starting Ollama service")
             success = self.ollama_wrapper.start_service()
@@ -827,7 +839,11 @@ class ModelPage(QWidget):
                 self.download_status.setStyleSheet("color: orange;")
     
     def _update_service_status(self):
-        """Update the service status display"""
+        """
+        Update the UI and internal state to reflect the current Ollama service status.
+        
+        Checks the Ollama wrapper (if available) for whether the service is running, updates the wrapper's internal status, and calls _set_status to update UI indicators. If the service transitions from not-ready to running, triggers a models refresh. If no wrapper is present, marks the status as NOT_INSTALLED (when the OllamaStatus enum is available).
+        """
         if not self.ollama_wrapper:
             self._set_status(OllamaStatus.NOT_INSTALLED
                              if OllamaStatus else None)
@@ -890,7 +906,16 @@ class ModelPage(QWidget):
             QTimer.singleShot(100, self._perform_manual_start)
     
     def _perform_manual_start(self):
-        """Perform the manual service start"""
+        """
+        Attempt to start the Ollama service manually and update UI state.
+        
+        If an Ollama wrapper is available, calls its start_service() method synchronously. On success, updates internal service status, refreshes the model list, and shows a transient success message in the download/status area (hidden after ~5s). On failure, sets the status label and re-enables the Start button, and displays a persistent error message in the download/status area.
+        
+        Side effects:
+        - Calls into the Ollama wrapper to start the service.
+        - Updates UI widgets (status label, start button, download/status text and styling).
+        - Logs success or failure.
+        """
         if self.ollama_wrapper:
             success = self.ollama_wrapper.start_service()
             

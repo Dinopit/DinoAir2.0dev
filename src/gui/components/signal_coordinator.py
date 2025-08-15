@@ -690,11 +690,17 @@ class SignalDebugger:
             )
             
     def log_signal(self, signal_name: str, args: tuple):
-        """Log signal emission with timestamp
+        """
+        Record a signal emission in the internal signal log and optionally emit a debug entry.
         
-        Args:
-            signal_name: Name of the signal
-            args: Signal arguments
+        Appends a log entry containing a timestamp, the signal name, provided arguments, and a short stack trace to self.signal_log (kept to at most self.max_log_entries). When debug_mode is True, emits a one-line debug message to the coordinator's logger describing the signal and its arguments.
+        
+        Parameters:
+            signal_name (str): The identifier of the emitted signal.
+            args (tuple): The positional arguments passed with the signal; these are stored and joined for the debug message.
+        
+        Returns:
+            None
         """
         import traceback
         
@@ -717,7 +723,11 @@ class SignalDebugger:
             self.coordinator.logger.debug(f"[SIGNAL] {timestamp} - {signal_name}({args_str})")
             
     def enable_debug_mode(self):
-        """Enable debug output to console"""
+        """
+        Enable verbose signal logging for the associated SignalCoordinator.
+        
+        When enabled, the SignalDebugger will emit detailed debug entries to the coordinator's logger for each observed signal. This toggles internal debug_mode to True and records an informational message via the coordinator logger.
+        """
         self.debug_mode = True
         self.coordinator.logger.info("Signal debug mode enabled")
         
@@ -750,7 +760,11 @@ class SignalDebugger:
         self.signal_log.clear()
         
     def print_summary(self):
-        """Print a summary of signal activity"""
+        """
+        Log an informational summary of recorded signal activity.
+        
+        Produces an info-level summary (via self.coordinator.logger) that includes the total number of logged signals and a count per signal name derived from self.signal_log. Does not return a value.
+        """
         from collections import Counter
         
         signal_counts = Counter(entry['signal'] for entry in self.signal_log)

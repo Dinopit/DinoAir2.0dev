@@ -59,6 +59,11 @@ class PseudocodePage(QWidget):
     """Pseudocode translator page widget"""
     
     def __init__(self):
+        """
+        Initialize the PseudocodePage widget.
+        
+        Attempts to instantiate the translator (SimpleTranslator) if available; on failure logs the error and leaves the translator unset. Initializes internal state for a running translation thread and builds the UI by calling setup_ui().
+        """
         super().__init__()
         self.translator = None
         self.translation_thread = None

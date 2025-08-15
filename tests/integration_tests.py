@@ -49,7 +49,11 @@ class TestBasicIntegration(unittest.TestCase):
         self.assertEqual(nonexistent, "default")
     
     def test_env_override(self):
-        """Test environment variable override"""
+        """
+        Assert that the ConfigLoader exposes environment variable overrides.
+        
+        If the ConfigLoader under test has an `env_vars` attribute, this test verifies it is a dict (i.e., a mapping of environment override keys to values).
+        """
         # Test if env override functionality works
         if hasattr(self.config, 'env_vars'):
             self.assertIsInstance(self.config.env_vars, dict)
@@ -70,7 +74,11 @@ class TestToolIntegration(unittest.TestCase):
     """Test tool system integration"""
     
     def setUp(self):
-        """Set up test environment"""
+        """
+        Initialize test fixtures before each test method runs.
+        
+        Creates a fresh Logger instance assigned to self.logger for use by tests.
+        """
         self.logger = Logger()
     
     def test_tool_imports(self):
@@ -127,7 +135,12 @@ class TestHealthCheck(unittest.TestCase):
     """Test health check functionality"""
     
     def test_health_check_script(self):
-        """Test that health check script works"""
+        """
+        Verify the project's health_check.py script executes and returns an expected status.
+        
+        Runs the health_check.py script in quiet mode using the current Python interpreter and asserts the stripped stdout is one of: "healthy", "degraded", or "unhealthy".
+        If the script times out the test fails; if the script file is missing the test is skipped.
+        """
         import subprocess
         
         try:
@@ -196,7 +209,11 @@ class TestProgressIndicators(unittest.TestCase):
             self.skipTest(f"Progress indicators not available: {e}")
     
     def test_spinner(self):
-        """Test spinner functionality"""
+        """
+        Verify Spinner can be instantiated, started, and stopped without raising an exception.
+        
+        Creates a Spinner with a short label, starts it, then stops it with a final message. If the progress_indicators module is unavailable, the test is skipped.
+        """
         try:
             from src.utils.progress_indicators import Spinner
             
@@ -211,7 +228,18 @@ class TestProgressIndicators(unittest.TestCase):
 
 
 def run_integration_tests():
-    """Run the integration test suite"""
+    """
+    Run the integration test suite composed of the module's unittest.TestCase classes and report a concise summary.
+    
+    Loads tests from TestBasicIntegration, TestToolIntegration, TestHealthCheck, TestCircularImportFix, and TestProgressIndicators, runs them with a TextTestRunner (verbosity=2), prints a readable summary (tests run, failures, errors, skipped) to stdout, and returns the overall success as a boolean.
+    
+    Returns:
+        bool: True if all tests passed (no failures or errors), False otherwise.
+    
+    Side effects:
+        - Prints progress and a summary to stdout.
+        - Executes the test cases, which may import modules, run subprocesses, or skip tests depending on environment.
+    """
     print("Running DinoAir Integration Tests...")
     print("=" * 50)
     
@@ -252,20 +280,7 @@ def run_integration_tests():
         print("❌ Some tests failed")
         return False
 
-    logger.info("\n" + "=" * 50)
-    logger.info("Integration Test Summary")
-    logger.info("=" * 50)
-    logger.info(f"Tests run: {result.testsRun}")
-    logger.info(f"Failures: {len(result.failures)}")
-    logger.info(f"Errors: {len(result.errors)}")
-    logger.info(f"Skipped: {len(result.skipped) if hasattr(result, 'skipped') else 0}")
-    
-    if result.wasSuccessful():
-        logger.info("✅ All tests passed!")
-        return True
-    else:
-        logger.info("❌ Some tests failed")
-        return False
+
 if __name__ == "__main__":
     success = run_integration_tests()
     sys.exit(0 if success else 1)

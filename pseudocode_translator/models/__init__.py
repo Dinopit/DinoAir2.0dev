@@ -91,7 +91,16 @@ except ImportError:
 
 # Auto-discover and register all available models (when ready)
 def auto_discover_models():
-    """Auto-discover and register model implementations"""
+    """
+    Auto-discover and import model implementation submodules in this package.
+    
+    This triggers module-level registration code in each discovered submodule so implementations
+    can register themselves with the package registry. The function scans the package directory
+    for submodules (skipping 'base', 'registry', 'manager', and 'downloader') and attempts to
+    import each one. Import failures are caught and logged at debug level; they do not stop discovery.
+    
+    No value is returned.
+    """
     import importlib
     import pkgutil
     import logging

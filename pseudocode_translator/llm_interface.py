@@ -29,16 +29,21 @@ try:
 except ImportError:
     # Create a mock ModelManager for now to avoid import errors
     class ModelManager:
-        """
-        Mock ModelManager fallback used when the real ModelManager cannot be imported.
-        This class exists to prevent import errors (e.g., due to circular dependencies)
-        and allows the code to run in a degraded mode. All methods are stubs.
-        """
         def __init__(self, *args, **kwargs):
+            """
+            No-op initializer for the mock ModelManager used when the real manager cannot be imported.
+            
+            Accepts arbitrary positional and keyword arguments for API compatibility but performs no initialization or side effects.
+            """
             pass
         def get_model(self, *args, **kwargs):
             return None
         def close(self):
+            """
+            Close the model manager and release any held resources.
+            
+            In this minimal/mock implementation this method is a no-op and exists only for API compatibility.
+            """
             pass
 from .models.registry import list_available_models, model_exists
 
