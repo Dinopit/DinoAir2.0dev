@@ -30,6 +30,7 @@ from src.input_processing.input_sanitizer import (
 )
 from src.utils.scaling import get_scaling_helper
 from src.utils.colors import DinoPitColors
+from src.utils.logger import Logger
 
 
 class TabContentWidget(QWidget):
@@ -273,7 +274,8 @@ class TabbedContentWidget(QWidget):
             index (int): The index of the newly selected tab
         """
         tab_name = self.tabs[index]['label']
-        print(f"Tab changed to: {tab_name}")
+        logger = Logger()
+        logger.debug(f"Tab changed to: {tab_name}")
         # In a real application, this would handle tab-specific logic
     
     def handle_chat_message(self, message):
@@ -549,7 +551,8 @@ class TabbedContentWidget(QWidget):
         Args:
             message (str): Security feedback message
         """
-        print(f"[Security] {message}")
+        logger = Logger()
+        logger.warning(f"[Security] {message}")
         # In a real app, this could update a status bar or show notifications
         
     def set_main_window_ref(self, main_window):

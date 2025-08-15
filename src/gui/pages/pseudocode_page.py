@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont, QTextCursor
 
+from ...utils.logger import Logger
+
 # Import the translator API
 try:
     from pseudocode_translator.integration.api import SimpleTranslator
@@ -66,7 +68,8 @@ class PseudocodePage(QWidget):
             try:
                 self.translator = SimpleTranslator()
             except Exception as e:
-                print(f"Failed to initialize translator: {e}")
+                logger = Logger()
+                logger.error(f"Failed to initialize translator: {e}")
                 
         self.setup_ui()
         

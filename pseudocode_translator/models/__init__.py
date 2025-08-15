@@ -76,7 +76,10 @@ except ImportError:
 try:
     from .manager import ModelManager  # noqa: F401
     __all__.append('ModelManager')
-except ImportError:
+except ImportError as e:
+    # Log the import error for debugging but don't fail
+    import logging
+    logging.debug(f"ModelManager import failed: {e}")
     pass
 
 try:
@@ -103,9 +106,10 @@ def auto_discover_models():
                 logging.debug(f"Model module '{module_name}' not ready: {e}")
 
 
-# Call auto-discover when registry is available
-try:
-    from .registry import ModelRegistry  # noqa: F401, F811
-    auto_discover_models()
-except ImportError:
-    pass
+# Call auto-discover when registry is available (only if needed)
+# Comment out for now to avoid import issues
+# try:
+#     from .registry import ModelRegistry  # noqa: F401, F811
+#     auto_discover_models()
+# except ImportError:
+#     pass
