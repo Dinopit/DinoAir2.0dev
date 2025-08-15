@@ -714,7 +714,7 @@ class SignalDebugger:
         if self.debug_mode:
             timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
             args_str = ', '.join(str(arg) for arg in args)
-            print(f"[SIGNAL] {timestamp} - {signal_name}({args_str})")
+            self.coordinator.logger.debug(f"[SIGNAL] {timestamp} - {signal_name}({args_str})")
             
     def enable_debug_mode(self):
         """Enable debug output to console"""
@@ -755,9 +755,10 @@ class SignalDebugger:
         
         signal_counts = Counter(entry['signal'] for entry in self.signal_log)
         
-        print("\n=== Signal Activity Summary ===")
-        print(f"Total signals logged: {len(self.signal_log)}")
-        print("\nSignal counts:")
+        logger = self.coordinator.logger
+        logger.info("\n=== Signal Activity Summary ===")
+        logger.info(f"Total signals logged: {len(self.signal_log)}")
+        logger.info("\nSignal counts:")
         for signal_name, count in signal_counts.most_common():
-            print(f"  {signal_name}: {count}")
-        print("==============================\n")
+            logger.info(f"  {signal_name}: {count}")
+        logger.info("==============================\n")

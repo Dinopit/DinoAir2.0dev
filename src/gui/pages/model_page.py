@@ -804,11 +804,11 @@ class ModelPage(QWidget):
     def _auto_start_service(self):
         """Automatically start the Ollama service"""
         if self.ollama_wrapper:
-            print("[ModelPage] Auto-starting Ollama service")
+            logger.info("[ModelPage] Auto-starting Ollama service")
             success = self.ollama_wrapper.start_service()
             
             if success:
-                print("[ModelPage] Service auto-started successfully")
+                logger.info("[ModelPage] Service auto-started successfully")
                 self._update_service_status()
                 self._refresh_models()
                 
@@ -818,7 +818,7 @@ class ModelPage(QWidget):
                 self.download_status.setStyleSheet("color: green;")
                 QTimer.singleShot(5000, lambda: self.download_status.setVisible(False))
             else:
-                print("[ModelPage] Failed to auto-start service")
+                logger.error("[ModelPage] Failed to auto-start service")
                 self._update_service_status()
                 
                 # Show error notification
@@ -839,7 +839,7 @@ class ModelPage(QWidget):
         
         # Update wrapper's internal status
         if is_running and not was_ready:
-            print("[ModelPage] Service detected as running after being not ready")
+            logger.info("[ModelPage] Service detected as running after being not ready")
             self._refresh_models()
             
         status = self.ollama_wrapper.service_status
@@ -882,7 +882,7 @@ class ModelPage(QWidget):
     def _start_service(self):
         """Attempt to start the Ollama service"""
         if self.ollama_wrapper:
-            print("[ModelPage] Manual service start requested")
+            logger.info("[ModelPage] Manual service start requested")
             self.status_label.setText("Service Status: Starting...")
             self.start_service_btn.setEnabled(False)
             
@@ -895,7 +895,7 @@ class ModelPage(QWidget):
             success = self.ollama_wrapper.start_service()
             
             if success:
-                print("[ModelPage] Manual service start successful")
+                logger.info("[ModelPage] Manual service start successful")
                 self._update_service_status()
                 self._refresh_models()
                 
@@ -905,7 +905,7 @@ class ModelPage(QWidget):
                 self.download_status.setStyleSheet("color: green;")
                 QTimer.singleShot(5000, lambda: self.download_status.setVisible(False))
             else:
-                print("[ModelPage] Manual service start failed")
+                logger.error("[ModelPage] Manual service start failed")
                 self.status_label.setText("Service Status: Failed to start")
                 self.start_service_btn.setEnabled(True)
                 
