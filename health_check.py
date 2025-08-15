@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Add src to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent))
 
 from src.utils.logger import Logger
 from src.utils.config_loader import ConfigLoader
