@@ -85,7 +85,11 @@ class ConfigLoader:
                     value = int(value)
                 elif value.replace('.', '').isdigit():
                     value = float(value)
-                
+                else:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
                 self.set(config_key, value, save=False)
     
     def create_default_config(self) -> None:
