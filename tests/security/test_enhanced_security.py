@@ -18,7 +18,21 @@ from src.input_processing.stages.enhanced_sanitizer import EnhancedInputSanitize
 
 
 def test_enhanced_security():
-    """Test the enhanced security implementation."""
+    """Test the enhanced security implementation for pytest."""
+    report = run_enhanced_security_test()
+    
+    # Assert that security score is above minimum threshold
+    assert report["security_score"] >= 70.0, f"Security score {report['security_score']}% is below minimum threshold of 70%"
+    
+    # Assert that all test suites have at least some protection
+    for suite_name, result in report["test_results"].items():
+        assert result["success_rate"] > 0, f"No protection detected for {suite_name}"
+    
+    print("✓ Enhanced security test completed successfully")
+
+
+def run_enhanced_security_test():
+    """Run the enhanced security implementation test."""
     
     print("=" * 60)
     print("DinoAir Enhanced Security Testing")
@@ -208,7 +222,7 @@ def compare_with_original():
 
 if __name__ == "__main__":
     # Run enhanced security test
-    report = test_enhanced_security()
+    report = run_enhanced_security_test()
     
     # Compare with original
     compare_with_original()

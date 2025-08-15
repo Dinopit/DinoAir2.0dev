@@ -1,0 +1,242 @@
+name: DinoAir 2.0 Testing and Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov coverage flake8 black
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f pseudocode_translator/requirements-dev.txt ]; then pip install -r pseudocode_translator/requirements-dev.txt; fi
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings. GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting with black
+      run: |
+        black --check --diff .
+      continue-on-error: true
+    
+    - name: Run unit tests with coverage
+      run: |
+        python -m pytest tests/unit/ --cov=src --cov=pseudocode_translator --cov-report=xml --cov-report=term-missing -v
+    
+    - name: Run integration tests
+      run: |
+        python -m pytest tests/integration/ --cov=src --cov=pseudocode_translator --cov-append --cov-report=xml --cov-report=term-missing -v
+      continue-on-error: true
+    
+    - name: Run security tests
+      run: |
+        python -m pytest tests/security/ --cov=src --cov=pseudocode_translator --cov-append --cov-report=xml --cov-report=term-missing -v
+    
+    - name: Run performance benchmarks
+      run: |
+        python -m pytest tests/performance/ -v
+      continue-on-error: true
+    
+    - name: Run end-to-end tests
+      run: |
+        python -m pytest tests/e2e/ -v
+      continue-on-error: true
+    
+    - name: Enhanced validation framework test
+      run: |
+        python tests/enhanced_validation_framework.py
+    
+    - name: Run comprehensive test framework
+      run: |
+        python tests/test_framework.py
+      continue-on-error: true
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install quality tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort bandit safety mypy
+        pip install pytest pytest-cov coverage
+    
+    - name: Run flake8
+      run: |
+        flake8 src/ pseudocode_translator/ --max-line-length=88 --extend-ignore=E203,W503
+    
+    - name: Run black formatting check
+      run: |
+        black --check src/ pseudocode_translator/
+    
+    - name: Run import sorting check
+      run: |
+        isort --check-only src/ pseudocode_translator/
+    
+    - name: Run security analysis with bandit
+      run: |
+        bandit -r src/ pseudocode_translator/ -f json -o bandit-report.json
+      continue-on-error: true
+    
+    - name: Run safety check for dependencies
+      run: |
+        safety check --json --output safety-report.json
+      continue-on-error: true
+    
+    - name: Type checking with mypy
+      run: |
+        mypy src/ pseudocode_translator/ --ignore-missing-imports
+      continue-on-error: true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+      if: always()
+
+  documentation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install documentation tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
+    
+    - name: Check documentation build
+      run: |
+        if [ -d "docs/" ]; then
+          cd docs/
+          sphinx-build -b html . _build/html
+        else
+          echo "No docs directory found"
+        fi
+      continue-on-error: true
+
+  coverage-report:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov coverage
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Generate comprehensive coverage report
+      run: |
+        python -m pytest tests/ --cov=src --cov=pseudocode_translator --cov-report=html --cov-report=term --cov-report=json
+    
+    - name: Coverage Badge
+      run: |
+        coverage json
+        python -c "
+        import json
+        with open('coverage.json') as f:
+            coverage = json.load(f)['totals']['percent_covered']
+        print(f'Coverage: {coverage:.1f}%')
+        if coverage < 80:
+            print('::warning::Coverage is below 80%')
+        else:
+            print('::notice::Coverage target met!')
+        "
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+      if: always()
+
+  deployment-check:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: |
+        python -m build
+    
+    - name: Check package
+      run: |
+        python -m twine check dist/*
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
