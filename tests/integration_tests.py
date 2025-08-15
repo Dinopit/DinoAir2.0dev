@@ -252,7 +252,20 @@ def run_integration_tests():
         print("❌ Some tests failed")
         return False
 
-
+    logger.info("\n" + "=" * 50)
+    logger.info("Integration Test Summary")
+    logger.info("=" * 50)
+    logger.info(f"Tests run: {result.testsRun}")
+    logger.info(f"Failures: {len(result.failures)}")
+    logger.info(f"Errors: {len(result.errors)}")
+    logger.info(f"Skipped: {len(result.skipped) if hasattr(result, 'skipped') else 0}")
+    
+    if result.wasSuccessful():
+        logger.info("✅ All tests passed!")
+        return True
+    else:
+        logger.info("❌ Some tests failed")
+        return False
 if __name__ == "__main__":
     success = run_integration_tests()
     sys.exit(0 if success else 1)
