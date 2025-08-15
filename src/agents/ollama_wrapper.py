@@ -107,19 +107,31 @@ class OllamaWrapper:
             timeout: Request timeout in seconds
             config_path: Optional path to configuration file
         """
+        # Initial host resolution: explicit arg wins, then env, then default
         self._host = host or os.getenv('OLLAMA_HOST', 'http://localhost:11434')
         self._timeout = timeout
         self._config_path = config_path
-        self._client: Optional[Any] = None  # Use Any to avoid type issues
+        self._client = None  # Client instance will be created on init
         self._service_status = OllamaStatus.CHECKING
-        self._current_model: Optional[str] = None
-        self._model_cache: Dict[str, ModelInfo] = {}
-        self._chat_context: List[ChatMessage] = []
+        self._current_model = None
+        self._model_cache = {}
+        self._chat_context = []
         self._is_initialized = False
-        
+
         # Configuration
         self._config = self._load_configuration()
-        
+
+        # Honor app configuration api_base when no explicit host/env provided
+        # and normalize common pitfalls (e.g., localhost vs 127.0.0.1 on Windows)
+        try:
+            if host is None and 'OLLAMA_HOST' not in os.environ:
+                api_base = self._config.get('api_base') if isinstance(self._config, dict) else None
+                if api_base:
+                    self._host = api_base
+        except Exception:
+            # Non-fatal; keep existing host
+            pass
+
         # Initialize
         self._initialize()
     
@@ -210,6 +222,28 @@ class OllamaWrapper:
                         f"Default model {self._current_model} not available"
                     )
             else:
+                # Fallback attempt: if using localhost, try 127.0.0.1 (Windows IPv6/IPv4 mismatch)
+                fallback_tried = False
+                if isinstance(self._host, str) and 'localhost' in self._host:
+                    try:
+                        alt_host = self._host.replace('localhost', '127.0.0.1')
+                        logger.info(f"_initialize: Primary host failed. Trying fallback host {alt_host}")
+                        self._client = Client(host=alt_host, timeout=self._timeout)
+                        if self._check_service():
+                            self._host = alt_host
+                            self._service_status = OllamaStatus.READY
+                            self._is_initialized = True
+                            logger.info(f"Ollama service ready at fallback {self._host}")
+                            # Ensure default model availability
+                            self._current_model = self._config.get('default_model', 'llama3.2')
+                            if self._current_model and not self.ensure_model(self._current_model):
+                                logger.warning(f"Default model {self._current_model} not available")
+                            return
+                        fallback_tried = True
+                    except Exception as fe:
+                        logger.debug(f"_initialize: Fallback host attempt failed: {fe}")
+
+                # If still here, mark as not running
                 self._service_status = OllamaStatus.NOT_RUNNING
                 logger.warning("Ollama service not running")
                 
@@ -1078,6 +1112,9 @@ class OllamaWrapper:
         # Try a quick check first without full reinitialize
         if self._check_service():
             self._service_status = OllamaStatus.READY
+            # Ensure wrapper transitions to ready state for is_ready property
+            if self._client is not None:
+                self._is_initialized = True
             return True
         
         # If quick check fails, do full reinitialize

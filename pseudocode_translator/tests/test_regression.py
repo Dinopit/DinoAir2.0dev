@@ -11,16 +11,16 @@ import tempfile
 from pathlib import Path
 import sys
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Ensure project root is importable, then use package imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from translator import TranslationManager, TranslationResult
-from parser import ParserModule
-from assembler import CodeAssembler
-from validator import Validator
-from models import CodeBlock, BlockType
-from config import TranslatorConfig
-from exceptions import (
+from pseudocode_translator.translator import TranslationManager, TranslationResult
+from pseudocode_translator.parser import ParserModule
+from pseudocode_translator.assembler import CodeAssembler
+from pseudocode_translator.validator import Validator
+from pseudocode_translator.models import CodeBlock, BlockType
+from pseudocode_translator.config import TranslatorConfig
+from pseudocode_translator.exceptions import (
     TranslatorError, ParsingError, ValidationError,
     AssemblyError, ModelError
 )
@@ -711,6 +711,62 @@ def cached_function():
         self.assertEqual(
             ast.dump(tree1),
             ast.dump(tree2)
+        )
+
+
+class TestModularStructure(unittest.TestCase):
+    """Ensure modules remain decoupled and respect architecture boundaries"""
+
+    def test_pseudocode_translator_has_no_gui_or_app_imports(self):
+        """pseudocode_translator must not import GUI, tools, or agents"""
+        from pathlib import Path
+
+        pkg_root = Path(__file__).parent.parent  # pseudocode_translator/
+        forbidden_tokens = (
+            "PySide6",            # GUI framework
+            "src.gui",            # GUI package
+            "src\\gui",           # Windows path variant in imports
+            "tools.",             # app tools package
+            "agents.",            # app agents package
+            "src.tools",          # fully-qualified tools
+            "src.agents",         # fully-qualified agents
+        )
+
+        violations = []
+        for py_file in pkg_root.rglob("*.py"):
+            # Skip tests themselves
+            if "tests" in py_file.parts:
+                continue
+            try:
+                text = py_file.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+
+            for token in forbidden_tokens:
+                if (f"import {token}" in text) or (f"from {token} import" in text):
+                    violations.append(
+                        f"{py_file.relative_to(pkg_root)} imports forbidden token '{token}'"
+                    )
+
+        self.assertFalse(
+            violations,
+            msg="Modular boundary violations found:\n" + "\n".join(violations)
+        )
+
+    def test_gui_signal_coordinator_does_not_import_pseudocode_translator(self):
+        """GUI should not directly import pseudocode_translator"""
+        from pathlib import Path
+
+        project_root = Path(__file__).parent.parent.parent
+        gui_file = project_root / "src" / "gui" / "components" / "signal_coordinator.py"
+        if not gui_file.exists():
+            self.skipTest("signal_coordinator.py not present")
+
+        text = gui_file.read_text(encoding="utf-8", errors="ignore")
+        self.assertNotIn(
+            "pseudocode_translator",
+            text,
+            "GUI should not import pseudocode_translator directly"
         )
 
 

@@ -16,31 +16,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Import the OllamaAgent and Agent System
+# Import the Ollama wrapper first (critical for ModelPage functionality)
 try:
     from src.agents.ollama_wrapper import (
         OllamaWrapper, OllamaStatus, ChatMessage, GenerationResponse
     )
+    OLLAMA_AVAILABLE = True
+except ImportError as e:
+    OLLAMA_AVAILABLE = False
+    OllamaWrapper = None
+    OllamaStatus = None
+    ChatMessage = None
+    GenerationResponse = None
+    logger.error(f"[ModelPage] Ollama wrapper import failed: {e}")
+
+# Import the Agent System separately; it's optional for basic wrapper use
+try:
     from src.agents.ollama_agent import OllamaAgent, create_ollama_agent
     from src.agents.agent_manager import (
         get_agent_manager, initialize_agent_system, sync_chat_with_agent
     )
     from src.tools.basic_tools import AVAILABLE_TOOLS
-    OLLAMA_AVAILABLE = True
     AGENT_SYSTEM_AVAILABLE = True
-except ImportError:
-    OLLAMA_AVAILABLE = False
+except ImportError as e:
     AGENT_SYSTEM_AVAILABLE = False
-    OllamaWrapper = None
     OllamaAgent = None
     create_ollama_agent = None
-    OllamaStatus = None
-    ChatMessage = None
-    GenerationResponse = None
     get_agent_manager = None
     initialize_agent_system = None
     sync_chat_with_agent = None
     AVAILABLE_TOOLS = {}
+    logger.warning(f"[ModelPage] Agent system import failed, continuing with wrapper only: {e}")
 
 
 class ModelDownloadThread(QThread):
@@ -264,15 +270,11 @@ class ModelPage(QWidget):
         self.generation_thread = None
         self.status_timer = None
         
-        # Initialize wrapper and agent system if available
-        if OLLAMA_AVAILABLE and OllamaWrapper:
+        # Initialize wrapper (independent of optional Agent System)
+        if OllamaWrapper is not None:
             try:
                 self.ollama_wrapper = OllamaWrapper()
                 logger.info("[ModelPage] OllamaWrapper initialized successfully")
-            except ImportError as e:
-                logger.error(f"[ModelPage] Failed to import OllamaWrapper: {e}")
-            except ConnectionError as e:
-                logger.error(f"[ModelPage] Failed to connect to Ollama service: {e}")
             except Exception as e:
                 logger.error(f"[ModelPage] Failed to initialize OllamaWrapper: {e}", exc_info=True)
         

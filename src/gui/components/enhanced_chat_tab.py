@@ -127,17 +127,20 @@ class EnhancedChatTabWidget(QWidget):
         self.current_session: Optional[ChatSession] = None
         self.current_model: Optional[str] = None
         self._scaling_helper = get_scaling_helper()
-        
+
         # Loading and feedback components
-        self._typing_indicator: Optional[TypingIndicator] = None
-        self._message_send_indicator: Optional[MessageSendIndicator] = None
-        
+        self._typing_indicator = None
+        self._message_send_indicator = None
+
         # Create UI
         self._setup_ui()
-        
+
         # Start a new session by default
         self.start_new_session()
-        
+
+        # Enable keyboard shortcuts (new chat, send, clear, focus)
+        self._setup_keyboard_shortcuts()
+
         # Connect to zoom changes
         self._scaling_helper.zoom_changed.connect(self._on_zoom_changed)
         
@@ -246,7 +249,7 @@ class EnhancedChatTabWidget(QWidget):
             border-radius: {self._scaling_helper.scaled_size(4)}px;
         """)
         bar.setFixedHeight(self._scaling_helper.scaled_size(40))
-        
+
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(
             self._scaling_helper.scaled_size(10),
@@ -254,7 +257,7 @@ class EnhancedChatTabWidget(QWidget):
             self._scaling_helper.scaled_size(10),
             self._scaling_helper.scaled_size(5)
         )
-        
+
         # Session title label with improved typography
         self.session_title_label = QLabel("New Chat")
         title_font_size = self._scaling_helper.get_font_for_role(
@@ -265,7 +268,18 @@ class EnhancedChatTabWidget(QWidget):
             font-weight: bold;
             font-size: {title_font_size}px;
         """)
-        
+
+        # Current model indicator (helps users know what model Chat will use)
+        self.model_label = QLabel("")
+        model_font_size = self._scaling_helper.get_font_for_role(
+            'body_secondary'
+        )
+        self.model_label.setStyleSheet(f"""
+            color: {DinoPitColors.SOFT_ORANGE};
+            font-size: {model_font_size}px;
+        """)
+        self.model_label.setVisible(False)
+
         # New chat button
         self.new_chat_button = QPushButton("+ New Chat")
         self.new_chat_button.setFixedSize(
@@ -295,11 +309,14 @@ class EnhancedChatTabWidget(QWidget):
             }}
         """)
         self.new_chat_button.clicked.connect(self._on_new_chat_clicked)
-        
+
+        # Assemble the bar layout
         layout.addWidget(self.session_title_label)
+        layout.addSpacing(self._scaling_helper.scaled_size(10))
+        layout.addWidget(self.model_label)
         layout.addStretch()
         layout.addWidget(self.new_chat_button)
-        
+
         return bar
         
     def start_new_session(self, title: Optional[str] = None,
@@ -400,6 +417,24 @@ class EnhancedChatTabWidget(QWidget):
         message = self.input_field.text().strip()
         
         if message and self.current_session:
+            # If no model selected, provide immediate guidance and skip emit
+            if not self.current_model:
+                # Add the user's message for continuity
+                self.add_message(message, is_user=True)
+                # Provide helpful assistant response
+                self.add_message(
+                    "Please select a model in the Model tab first. "
+                    "Go to the Model tab, choose a model, then return here to chat.",
+                    is_user=False,
+                    save_to_db=False
+                )
+                # Clear and disable send until more text is entered
+                self.input_field.clear()
+                self.send_button.setEnabled(False)
+                # Ensure we show the latest messages
+                self.scroll_to_bottom()
+                return
+
             # Show sending indicator
             if self._message_send_indicator:
                 self._message_send_indicator.set_sending()
@@ -594,7 +629,13 @@ class EnhancedChatTabWidget(QWidget):
         """
         self.current_model = model_name
         # Update UI to show current model if needed
-        # Could add model indicator in chat interface
+        if hasattr(self, 'model_label') and self.model_label is not None:
+            if self.current_model:
+                self.model_label.setText(f"Model: {self.current_model}")
+                self.model_label.setVisible(True)
+            else:
+                self.model_label.clear()
+                self.model_label.setVisible(False)
         
     def get_current_model(self) -> Optional[str]:
         """Get the currently selected model
@@ -657,4 +698,6 @@ class EnhancedChatTabWidget(QWidget):
             self._typing_indicator.stop_animation()
             self.chat_layout.removeWidget(self._typing_indicator)
             self._typing_indicator.setParent(None)
+            # Ensure Qt cleans up the widget
+            self._typing_indicator.deleteLater()
             self._typing_indicator = None

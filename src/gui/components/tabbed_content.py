@@ -228,6 +228,23 @@ class TabbedContentWidget(QWidget):
             self.signal_debugger = SignalDebugger(self.signal_coordinator)
             # Enable debug mode if needed
             # self.signal_debugger.enable_debug_mode()
+
+    def set_tool_registry(self, tool_registry):
+        """Optionally accept a tool registry and forward it to relevant pages.
+        No-op if pages don’t support tools yet.
+        """
+        try:
+            # Forward to model page if it’s present
+            for i, tab in enumerate(self.tabs):
+                if tab['id'] == 'model':
+                    page = self.tab_widget.widget(i)
+                    updater = getattr(page, 'update_agent_with_tools', None)
+                    if callable(updater):
+                        updater(tool_registry)
+                    break
+        except Exception:
+            # Best-effort wiring; ignore errors
+            pass
     
     def _update_tab_widget_style(self):
         """Update the tab widget style with current scaling."""

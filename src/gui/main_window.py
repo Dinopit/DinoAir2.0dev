@@ -91,9 +91,17 @@ class MainWindow(QMainWindow):
         self.central_widget.setStyleSheet("background-color: #2B3A52;")
         self.setCentralWidget(self.central_widget)
         
-        # Enable widget painting optimizations
-        self.central_widget.setAttribute(Qt.WA_OpaquePaintEvent)
-        self.central_widget.setAttribute(Qt.WA_NoSystemBackground)
+        # Enable widget painting optimizations (use WidgetAttribute enum)
+        try:
+            self.central_widget.setAttribute(
+                Qt.WidgetAttribute.WA_OpaquePaintEvent
+            )
+            self.central_widget.setAttribute(
+                Qt.WidgetAttribute.WA_NoSystemBackground
+            )
+        except Exception:
+            # Some platforms may not support these attributes; ignore safely
+            pass
         
         # Create main layout
         self.main_layout = QVBoxLayout(self.central_widget)
@@ -248,7 +256,7 @@ class MainWindow(QMainWindow):
         if self.metrics_widget.isHidden():
             self.metrics_widget.show()
             
-        # Update metrics widget - already thread-safe via Qt signals
+    # Update metrics widget - already thread-safe via Qt signals
         self.metrics_widget.update_metrics(metrics)
             
     def toggle_notifications(self):
@@ -486,20 +494,32 @@ class MainWindow(QMainWindow):
             model_page.model_selected.connect(self._on_model_selected)
             self.logger.info("DEBUG: Connected model_selected signal")
             
-            # Verify the connection was established
-            receiver_count = model_page.model_selected.receivers
-            self.logger.info(f"DEBUG: Signal has {receiver_count} receivers")
+            # Proactively sync chat with the currently selected model
+            try:
+                current_model = None
+                if hasattr(model_page, 'model_combo'):
+                    current_model = model_page.model_combo.currentText()
+                    # Guard against placeholders
+                    if (current_model and (
+                        current_model == "Select a model..." or
+                        current_model.startswith("No models") or
+                        current_model.strip() == ""
+                    )):
+                        current_model = None
+                if current_model:
+                    self.logger.info(f"DEBUG: Syncing chat with current model: {current_model}")
+                    self._on_model_selected(current_model)
+            except Exception as sync_err:
+                self.logger.warning(f"DEBUG: Initial chat sync skipped: {sync_err}")
+
+            # Mark established after successful connect
+            self._signal_connections_established = True
+            self.logger.info("SUCCESS: Signal connections established")
             
-            if receiver_count > 0:
-                self._signal_connections_established = True
-                self.logger.info("SUCCESS: Signal connections established")
-                
-                # Clear retry timer if active
-                if self._connection_retry_timer:
-                    self._connection_retry_timer.stop()
-                    self._connection_retry_timer = None
-            else:
-                self.logger.error("ERROR: Signal connection failed - no receivers")
+            # Clear retry timer if active
+            if self._connection_retry_timer:
+                self._connection_retry_timer.stop()
+                self._connection_retry_timer = None
                 
         except Exception as e:
             self.logger.error(f"Failed to establish signal connections: {e}")
@@ -959,17 +979,24 @@ class MainWindow(QMainWindow):
             # Get basic system info
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()
+            ram_used_mb = (memory.total - memory.available) / (1024 * 1024)
+            ram_percent = memory.percent
+            try:
+                process_count = len(psutil.pids())
+            except Exception:
+                process_count = 0
             
-            # Create metrics object
+            # Create metrics object with required fields
             initial_metrics = SystemMetrics(
-                cpu_percent=cpu_percent,
-                memory_percent=memory.percent,
-                dinoair_processes=0,
+                vram_used_mb=0.0,
+                vram_total_mb=0.0,
                 vram_percent=0.0,
-                vram_used_gb=0.0,
-                vram_total_gb=0.0,
-                alerts=[],
-                timestamp=None
+                cpu_percent=cpu_percent,
+                ram_used_mb=ram_used_mb,
+                ram_percent=ram_percent,
+                process_count=process_count,
+                dinoair_processes=0,
+                uptime_seconds=0
             )
             
             # Update metrics widget

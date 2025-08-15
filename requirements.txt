@@ -26,6 +26,7 @@ faiss-cpu>=1.7.4
 python-dateutil>=2.8.0
 pathlib2>=2.3.0
 httpx>=0.25.0
+chardet>=5.0.0
 
 # Development
 pytest>=7.0.0

@@ -7,6 +7,7 @@ from typing import Dict, Optional, Any, List, Tuple, Set, Callable
 from datetime import datetime
 from functools import wraps
 from PySide6.QtCore import QObject, Signal, QTimer, Slot
+import time
 from PySide6.QtWidgets import QWidget
 
 from ...utils.logger import Logger
@@ -33,17 +34,14 @@ def retry_on_error(max_retries: int = 3, delay_ms: int = 100):
                     retries += 1
                     
                     if retries <= max_retries:
-                        # Exponential backoff
+                        # Exponential backoff with actual delay
                         delay = delay_ms * (2 ** (retries - 1))
                         self.logger.warning(
                             f"Error in {func.__name__}, retry {retries}/{max_retries} "
                             f"after {delay}ms: {str(e)}"
                         )
-                        # Use QTimer for non-blocking delay
-                        timer = QTimer()
-                        timer.setSingleShot(True)
-                        timer.timeout.connect(lambda: None)
-                        timer.start(delay)
+                        # Sleep to enforce delay (short and bounded)
+                        time.sleep(delay / 1000.0)
                     else:
                         self.logger.error(
                             f"Failed after {max_retries} retries in {func.__name__}: "
@@ -103,10 +101,10 @@ class FilterStateManager:
         self.logger.info(f"Widget {widget_id} subscribed to filter state")
         
         # Apply current filter immediately if widget supports it
-        if (hasattr(widget, 'apply_project_filter') and
-                self.current_project_id is not None):
-            # type: ignore
-            widget.apply_project_filter(self.current_project_id)
+        if self.current_project_id is not None:
+            apply_filter = getattr(widget, 'apply_project_filter', None)
+            if callable(apply_filter):
+                apply_filter(self.current_project_id)
             
     def unsubscribe(self, widget_id: str):
         """Unsubscribe a widget from filter state changes
@@ -697,6 +695,7 @@ class SignalDebugger:
             args: Signal arguments
         """
         import traceback
+        from datetime import datetime  # local import to avoid missing dependency
         
         entry = {
             'timestamp': datetime.now(),
@@ -714,7 +713,8 @@ class SignalDebugger:
         if self.debug_mode:
             timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
             args_str = ', '.join(str(arg) for arg in args)
-            print(f"[SIGNAL] {timestamp} - {signal_name}({args_str})")
+            # replaced print with centralized logger
+            self.coordinator.logger.debug(f"[SIGNAL] {timestamp} - {signal_name}({args_str})")
             
     def enable_debug_mode(self):
         """Enable debug output to console"""
@@ -755,9 +755,10 @@ class SignalDebugger:
         
         signal_counts = Counter(entry['signal'] for entry in self.signal_log)
         
-        print("\n=== Signal Activity Summary ===")
-        print(f"Total signals logged: {len(self.signal_log)}")
-        print("\nSignal counts:")
+        # replaced print with centralized logger
+        self.coordinator.logger.info("=== Signal Activity Summary ===")
+        self.coordinator.logger.info(f"Total signals logged: {len(self.signal_log)}")
+        self.coordinator.logger.info("Signal counts:")
         for signal_name, count in signal_counts.most_common():
-            print(f"  {signal_name}: {count}")
-        print("==============================\n")
+            self.coordinator.logger.info(f"  {signal_name}: {count}")
+        self.coordinator.logger.info("==============================")
