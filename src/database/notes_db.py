@@ -67,6 +67,15 @@ class NotesDatabase:
         except Exception as e:
             self.logger.error(f"Error ensuring database readiness: {str(e)}")
             raise
+
+    def _get_database_path(self) -> str:
+        """Compatibility helper used in tests to patch DB location.
+        Returns the filesystem path to the notes database file.
+        """
+        try:
+            return str(self.db_manager.notes_db_path)
+        except Exception:
+            return ""
             
     def _get_security(self):
         """Lazy load security module to avoid circular import."""

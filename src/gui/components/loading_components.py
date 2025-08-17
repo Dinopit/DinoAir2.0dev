@@ -12,8 +12,8 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QPainter, QPen, QColor
 
-from ...utils.colors import DinoPitColors
-from ...utils.scaling import get_scaling_helper
+from src.utils.colors import DinoPitColors
+from src.utils.scaling import get_scaling_helper
 
 
 class LoadingSpinner(QWidget):

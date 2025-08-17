@@ -10,10 +10,10 @@ import time
 import re
 from html.parser import HTMLParser
 
-from ...input_processing.stages.enhanced_sanitizer import (
+from src.input_processing.stages.enhanced_sanitizer import (
     EnhancedInputSanitizer
 )
-from ...utils.logger import Logger
+from src.utils.logger import Logger
 
 
 class NotesSecurityConfig:

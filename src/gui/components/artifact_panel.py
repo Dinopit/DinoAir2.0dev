@@ -18,12 +18,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QSize, QTimer
 from PySide6.QtGui import QAction, QFont
 
-from ...database.artifacts_db import ArtifactsDatabase
-from ...database.initialize_db import DatabaseManager
-from ...models.artifact import Artifact, ArtifactType
-from ...utils.colors import DinoPitColors
-from ...utils.scaling import get_scaling_helper
-from ...utils.logger import Logger
+# Use absolute imports so tests that add 'src' to sys.path work reliably
+from src.database.artifacts_db import ArtifactsDatabase
+from src.database.initialize_db import DatabaseManager
+from src.models.artifact import Artifact, ArtifactType
+from src.utils.colors import DinoPitColors
+from src.utils.scaling import get_scaling_helper
+from src.utils.logger import Logger
 
 
 class ArtifactListItem(QWidget):
