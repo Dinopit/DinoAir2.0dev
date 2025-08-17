@@ -13,7 +13,10 @@ from PySide6.QtCore import (
     QEasingCurve
 )
 
-from ...utils.scaling import get_scaling_helper
+try:
+    from src.utils.scaling import get_scaling_helper
+except ImportError:
+    from utils.scaling import get_scaling_helper
 
 
 class AnimatedProgressBar(QProgressBar):

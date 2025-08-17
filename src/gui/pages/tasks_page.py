@@ -18,7 +18,10 @@ from PySide6.QtGui import (
     QDragEnterEvent, QDropEvent, QDragMoveEvent
 )
 
-from ...database.projects_db import ProjectsDatabase
+try:
+    from src.database.projects_db import ProjectsDatabase
+except ImportError:
+    from database.projects_db import ProjectsDatabase
 # Test-friendly aliases for patch targets used by integration tests
 try:
     from ...database.notes_db import NotesDatabase as _NotesDatabase
@@ -40,15 +43,27 @@ except Exception:  # pragma: no cover
 NotesDatabase = _NotesDatabase
 ArtifactsDatabase = _ArtifactsDatabase
 AppointmentsDatabase = _AppointmentsDatabase
-from ...models.project import Project, ProjectStatus, ProjectStatistics
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.window_state import window_state_manager
+try:
+    from src.models.project import Project, ProjectStatus, ProjectStatistics
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.window_state import window_state_manager
+except ImportError:
+    from models.project import Project, ProjectStatus, ProjectStatistics
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.window_state import window_state_manager
 from ..components.tag_input_widget import TagInputWidget
-from ...tools.projects_service import ProjectsService
-from ...tools.notes_service import NotesService
-from ...tools.artifacts_service import ArtifactsService
+try:
+    from src.tools.projects_service import ProjectsService
+    from src.tools.notes_service import NotesService
+    from src.tools.artifacts_service import ArtifactsService
+except ImportError:
+    from tools.projects_service import ProjectsService
+    from tools.notes_service import NotesService
+    from tools.artifacts_service import ArtifactsService
 
 
 class IconSelectorDialog(QDialog):
@@ -485,7 +500,10 @@ class ProjectsPage(QWidget):
         self.logger = Logger()
         
         # Initialize database
-        from ...database.initialize_db import DatabaseManager
+        try:
+            from src.database.initialize_db import DatabaseManager
+        except ImportError:
+            from database.initialize_db import DatabaseManager
         db_manager = DatabaseManager()
         self.projects_db = ProjectsDatabase(db_manager)
         try:
@@ -494,7 +512,10 @@ class ProjectsPage(QWidget):
             self.projects_service = None  # pragma: no cover
         
         # Initialize notes database for cross-referencing
-        from ...database.notes_db import NotesDatabase
+        try:
+            from src.database.notes_db import NotesDatabase
+        except ImportError:
+            from database.notes_db import NotesDatabase
         self.notes_db = NotesDatabase()
         try:
             self.notes_service = NotesService(notes_db=self.notes_db)
@@ -502,7 +523,10 @@ class ProjectsPage(QWidget):
             self.notes_service = None  # pragma: no cover
         
         # Initialize artifacts database for cross-referencing
-        from ...database.artifacts_db import ArtifactsDatabase
+        try:
+            from src.database.artifacts_db import ArtifactsDatabase
+        except ImportError:
+            from database.artifacts_db import ArtifactsDatabase
         self.artifacts_db = ArtifactsDatabase(db_manager)
         try:
             self.artifacts_service = ArtifactsService(db_manager=db_manager, artifacts_db=self.artifacts_db)
@@ -510,7 +534,10 @@ class ProjectsPage(QWidget):
             self.artifacts_service = None  # pragma: no cover
         
         # Initialize appointments database for calendar integration
-        from ...database.appointments_db import AppointmentsDatabase
+        try:
+            from src.database.appointments_db import AppointmentsDatabase
+        except ImportError:
+            from database.appointments_db import AppointmentsDatabase
         self.appointments_db = AppointmentsDatabase(db_manager)
         
         self._current_project: Optional[Project] = None

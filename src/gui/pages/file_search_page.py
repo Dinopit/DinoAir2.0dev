@@ -12,14 +12,24 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, Signal, QThread, QSettings
 from PySide6.QtGui import QKeySequence, QShortcut
 
-from ...rag.vector_search import VectorSearchEngine, SearchResult
-from ...rag.file_processor import FileProcessor
-from ...rag.directory_validator import DirectoryValidator
-from ...database.file_search_db import FileSearchDB
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.window_state import window_state_manager
+try:
+    from src.rag.vector_search import VectorSearchEngine, SearchResult
+    from src.rag.file_processor import FileProcessor
+    from src.rag.directory_validator import DirectoryValidator
+    from src.database.file_search_db import FileSearchDB
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.window_state import window_state_manager
+except ImportError:
+    from rag.vector_search import VectorSearchEngine, SearchResult
+    from rag.file_processor import FileProcessor
+    from rag.directory_validator import DirectoryValidator
+    from database.file_search_db import FileSearchDB
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.window_state import window_state_manager
 from ..components.enhanced_file_search_results import EnhancedFileSearchResultsWidget
 from ..components.file_indexing_status import IndexingStatusWidget
 from ..components.directory_limiter_widget import DirectoryLimiterWidget

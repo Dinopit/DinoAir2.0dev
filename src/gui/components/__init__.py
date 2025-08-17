@@ -1,24 +1,9 @@
 """
-GUI Components Package
-Reusable UI components for the DinoAir application
+GUI Components Package - lightweight initializer
+
+Avoid re-exporting all components to reduce import-time side effects.
+Import specific components directly from their modules, e.g.:
+    from src.gui.components.tabbed_content import TabbedContentWidget
 """
 
-from .topbar import TopBar
-from .sidebar import Sidebar
-from .statusbar import StatusBar
-from .artifact_panel import ArtifactsWidget
-from .chat_input import ChatInputWidget
-from .enhanced_chat_history import EnhancedChatHistoryWidget
-from .tabbed_content import TabbedContentWidget
-from .enhanced_chat_tab import EnhancedChatTabWidget
-
-__all__ = [
-    'TopBar', 
-    'Sidebar', 
-    'StatusBar', 
-    'ArtifactsWidget', 
-    'ChatInputWidget',
-    'EnhancedChatHistoryWidget',
-    'TabbedContentWidget',
-    'EnhancedChatTabWidget'
-]
+__all__ = []

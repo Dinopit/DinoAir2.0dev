@@ -15,16 +15,28 @@ from PySide6.QtGui import QColor, QPalette
 from typing import Union
 from .enhanced_chat_tab import EnhancedChatTabWidget
 from .signal_coordinator import SignalCoordinator
-from ..pages.settings_page import SettingsPage
-from ..pages.notes_page import NotesPage
-from ..pages.smart_timer_page import SmartTimerPage
-from ..pages.appointments_page import AppointmentsPage
-from ..pages.artifacts_page import ArtifactsPage
-from ..pages.file_search_page import FileSearchPage
-from ..pages.tasks_page import ProjectsPage as TasksPage
-from ..pages.pseudocode_page import PseudocodePage
-from ..pages.model_page import ModelPage
-from ..pages.help_page import HelpPage
+try:
+    from src.gui.pages.settings_page import SettingsPage
+    from src.gui.pages.notes_page import NotesPage
+    from src.gui.pages.smart_timer_page import SmartTimerPage
+    from src.gui.pages.appointments_page import AppointmentsPage
+    from src.gui.pages.artifacts_page import ArtifactsPage
+    from src.gui.pages.file_search_page import FileSearchPage
+    from src.gui.pages.tasks_page import ProjectsPage as TasksPage
+    from src.gui.pages.pseudocode_page import PseudocodePage
+    from src.gui.pages.model_page import ModelPage
+    from src.gui.pages.help_page import HelpPage
+except ImportError:
+    from ..pages.settings_page import SettingsPage
+    from ..pages.notes_page import NotesPage
+    from ..pages.smart_timer_page import SmartTimerPage
+    from ..pages.appointments_page import AppointmentsPage
+    from ..pages.artifacts_page import ArtifactsPage
+    from ..pages.file_search_page import FileSearchPage
+    from ..pages.tasks_page import ProjectsPage as TasksPage
+    from ..pages.pseudocode_page import PseudocodePage
+    from ..pages.model_page import ModelPage
+    from ..pages.help_page import HelpPage
 from src.input_processing.input_sanitizer import (
     InputPipeline, InputPipelineError
 )

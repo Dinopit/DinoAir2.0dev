@@ -21,27 +21,46 @@ from PySide6.QtGui import (
     QDragMoveEvent
 )
 
-from ...database.artifacts_db import ArtifactsDatabase
+try:
+    from src.database.artifacts_db import ArtifactsDatabase
+except ImportError:
+    from database.artifacts_db import ArtifactsDatabase
 # Test-friendly alias: expose ProjectsDatabase symbol for patching in tests
 try:
-    from ...database.projects_db import ProjectsDatabase as _ProjectsDatabase
+    try:
+        from src.database.projects_db import ProjectsDatabase as _ProjectsDatabase
+    except ImportError:
+        from database.projects_db import ProjectsDatabase as _ProjectsDatabase
 except Exception:  # pragma: no cover - fallback for environments without DB
     class _ProjectsDatabase:  # minimal placeholder to allow patching
         pass
 
 # Re-export for tests expecting module attribute
 ProjectsDatabase = _ProjectsDatabase
-from ...models.artifact import (
+try:
+    from src.models.artifact import (
     Artifact, ArtifactType, ArtifactStatus, ArtifactCollection
-)
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.window_state import window_state_manager
+    )
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.window_state import window_state_manager
+except ImportError:
+    from models.artifact import (
+        Artifact, ArtifactType, ArtifactStatus, ArtifactCollection
+    )
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.window_state import window_state_manager
 from ..components.tag_input_widget import TagInputWidget
 from ..components.project_combo_box import ProjectComboBox
-from ...tools.artifacts_service import ArtifactsService
-from ...tools.projects_service import ProjectsService
+try:
+    from src.tools.artifacts_service import ArtifactsService
+    from src.tools.projects_service import ProjectsService
+except ImportError:
+    from tools.artifacts_service import ArtifactsService
+    from tools.projects_service import ProjectsService
 
 
 class CollectionDialog(QDialog):
@@ -631,7 +650,10 @@ class ArtifactsPage(QWidget):
         self.logger = Logger()
         
         # Initialize database
-        from ...database.initialize_db import DatabaseManager
+        try:
+            from src.database.initialize_db import DatabaseManager
+        except ImportError:
+            from database.initialize_db import DatabaseManager
         db_manager = DatabaseManager()
         self.artifacts_db = ArtifactsDatabase(db_manager)
         # Provide a service adapter for future use (keeps GUI thin)
@@ -641,7 +663,10 @@ class ArtifactsPage(QWidget):
             self.artifacts_service = None  # pragma: no cover
         
         # Initialize projects database for project info
-        from ...database.projects_db import ProjectsDatabase
+        try:
+            from src.database.projects_db import ProjectsDatabase
+        except ImportError:
+            from database.projects_db import ProjectsDatabase
         self.projects_db = ProjectsDatabase(db_manager)
         try:
             self.projects_service = ProjectsService(db_manager=db_manager)

@@ -1,28 +1,17 @@
 """
-GUI Package - PySide6 Interface Components
-Contains the main window, pages, and reusable components
+GUI Package - lightweight initializer
+
+Purpose:
+- Export `MainWindow` without importing all pages/components at import time.
+- Reduce import-time side effects and risk of circular imports.
+
+Consumers should import specific components directly, e.g.:
+    from src.gui.components.tabbed_content import TabbedContentWidget
+    from src.gui.pages.notes_page import NotesPage
 """
 
 from .main_window import MainWindow
-from .components import (
-    TopBar, Sidebar, StatusBar, 
-    ArtifactsWidget, ChatInputWidget, EnhancedChatHistoryWidget, 
-    TabbedContentWidget, EnhancedChatTabWidget
-)
-from .pages import NotesPage, CalendarPage, TasksPage, SettingsPage
 
 __all__ = [
     'MainWindow',
-    'TopBar', 
-    'Sidebar', 
-    'StatusBar',
-    'ArtifactsWidget',
-    'ChatInputWidget',
-    'EnhancedChatHistoryWidget',
-    'TabbedContentWidget',
-    'EnhancedChatTabWidget',
-    'NotesPage',
-    'CalendarPage', 
-    'TasksPage',
-    'SettingsPage'
 ]
