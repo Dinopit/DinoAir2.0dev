@@ -16,10 +16,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, QDate, Slot
 from PySide6.QtGui import QAction
 
-from ...database.chat_history_db import ChatHistoryDatabase
-from ...models.chat_session import ChatSession
-from ...utils.colors import DinoPitColors
-from ...utils.scaling import get_scaling_helper
+from src.database.chat_history_db import ChatHistoryDatabase
+from src.models.chat_session import ChatSession
+from src.utils.colors import DinoPitColors
+from src.utils.scaling import get_scaling_helper
 
 
 class ChatHistoryItem(QFrame):

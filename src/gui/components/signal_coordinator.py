@@ -7,9 +7,17 @@ from typing import Dict, Optional, Any, List, Tuple, Set, Callable
 from datetime import datetime
 from functools import wraps
 from PySide6.QtCore import QObject, Signal, QTimer, Slot
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QApplication
 
-from ...utils.logger import Logger
+# Ensure a QApplication exists for QWidget usage (especially in tests)
+try:
+    if QApplication.instance() is None:
+        _auto_created_qapp = QApplication([])
+except Exception:
+    # If creation fails, continue; tests may handle app lifecycle.
+    pass
+
+from src.utils.logger import Logger
 
 
 def retry_on_error(max_retries: int = 3, delay_ms: int = 100):
@@ -301,8 +309,11 @@ class SignalCoordinator(QObject):
                     ),
                 'project_filter_requested':
                     lambda pid: self._safe_handler(
-                        lambda: self.filter_state_manager.set_project_filter(
-                            pid, page_id),
+                        lambda: (
+                            self.filter_state_manager.set_project_filter(pid, page_id),
+                            # Also broadcast global change for listeners/debugger
+                            self.project_filter_changed.emit(pid or "")
+                        ),
                         'filter'
                     ),
                 'artifact_project_changed':
@@ -478,10 +489,10 @@ class SignalCoordinator(QObject):
         if update_type in self._pending_batch_updates:
             if item_id not in self._pending_batch_updates[update_type]:
                 self._pending_batch_updates[update_type].append(item_id)
-                
-            # Start timer if not already running
-            if not self._batch_timer.isActive():
-                self._batch_timer.start()
+
+            # Ensure batch processing runs on next event loop turn
+            # Using 0ms guarantees prompt coalescing of multiple updates
+            self._batch_timer.start(0)
                 
     @Slot()
     @retry_on_error(max_retries=1, delay_ms=50)

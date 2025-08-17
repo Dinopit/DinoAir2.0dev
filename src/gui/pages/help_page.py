@@ -12,9 +12,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
+try:
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+except ImportError:
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
 
 
 class CollapsibleSection(QFrame):

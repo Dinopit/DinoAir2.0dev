@@ -6,7 +6,10 @@ Provides modular text extractors for various file formats.
 import os
 import json
 import csv
-import chardet
+try:
+    import chardet  # type: ignore
+except Exception:
+    chardet = None  # type: ignore
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from pathlib import Path
@@ -91,29 +94,29 @@ class BaseExtractor(ABC):
     
     def detect_encoding(self, file_path: str) -> str:
         """
-        Detect file encoding using chardet.
-        
-        Args:
-            file_path: Path to the file
-            
-        Returns:
-            str: Detected encoding or 'utf-8' as fallback
+        Detect file encoding using chardet if available; otherwise default to UTF-8.
         """
         try:
+            if chardet is None:
+                self.logger.warning(
+                    f"chardet not available; defaulting to UTF-8 for {file_path}"
+                )
+                return 'utf-8'
+
             with open(file_path, 'rb') as f:
-                # Read first 10KB for detection
-                raw_data = f.read(10240)
+                # Read first 64KB for better detection
+                raw_data = f.read(65536)
                 if raw_data:
-                    result = chardet.detect(raw_data)
-                    encoding = result.get('encoding', 'utf-8')
-                    confidence = result.get('confidence', 0)
-                    
-                    if confidence > 0.7:
+                    result = chardet.detect(raw_data) or {}
+                    encoding = result.get('encoding') or 'utf-8'
+                    confidence = result.get('confidence') or 0
+                    if confidence and confidence > 0.7:
                         return encoding
-            
             return 'utf-8'
         except Exception as e:
-            self.logger.error(f"Error detecting encoding: {str(e)}")
+            self.logger.warning(
+                f"Encoding detection failed for {file_path} ({str(e)}); defaulting to UTF-8"
+            )
             return 'utf-8'
 
 

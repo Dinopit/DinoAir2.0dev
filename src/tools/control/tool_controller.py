@@ -74,8 +74,13 @@ class ToolController:
             default_policies: Default policies to apply
         """
         if registry is None:
-            from ..registry import ToolRegistry
-            registry = ToolRegistry()
+            # Lazy import to avoid circular dependency at import time
+            try:
+                from ..registry import ToolRegistry as _ToolRegistry
+                registry = _ToolRegistry()
+            except Exception as e:
+                logger.error(f"Failed to initialize ToolRegistry in ToolController: {e}")
+                raise
         self.registry = registry
         self._policies: List[BaseToolPolicy] = default_policies or []
         self._policy_cache: Dict[str, PolicyResult] = {}

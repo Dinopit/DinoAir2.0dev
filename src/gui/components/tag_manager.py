@@ -13,9 +13,9 @@ from PySide6.QtGui import (
     QMouseEvent, QContextMenuEvent
 )
 
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...database.notes_db import NotesDatabase
+from src.utils.colors import DinoPitColors
+from src.utils.logger import Logger
+from src.database.notes_db import NotesDatabase
 
 
 class TagCloudItem(QWidget):

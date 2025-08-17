@@ -25,6 +25,9 @@ class WatchdogMode(Enum):
     LEGACY = "legacy"  # ThreadPoolExecutor-based
     FALLBACK = "fallback"  # Simplified fallback
 
+# Backward compatibility alias expected by some tests
+AdapterMode = WatchdogMode
+
 
 @dataclass
 class FallbackConfig:

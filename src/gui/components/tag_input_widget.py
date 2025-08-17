@@ -18,6 +18,10 @@ from PySide6.QtGui import (
 from ...utils.colors import DinoPitColors
 from ...utils.logger import Logger
 from .notes_security import get_notes_security
+try:
+    from shiboken6 import Shiboken  # For safe object validity checks
+except Exception:  # pragma: no cover - optional at runtime
+    Shiboken = None  # type: ignore
 
 
 class TagChip(QWidget):
@@ -293,11 +297,8 @@ class TagInputWidget(QWidget):
             # Emit change signal
             self.tags_changed.emit(self._tags.copy())
             
-            # Scroll to show new tag
-            QTimer.singleShot(
-                100,
-                lambda: self.scroll_area.ensureWidgetVisible(chip)
-            )
+            # Scroll to show new tag (safely)
+            self._scroll_chip_into_view_later(chip)
         else:
             # Tag already exists
             QMessageBox.information(
@@ -353,11 +354,26 @@ class TagInputWidget(QWidget):
             # Emit change signal
             self.tags_changed.emit(self._tags.copy())
             
-            # Scroll to show new tag
-            QTimer.singleShot(
-                100,
-                lambda: self.scroll_area.ensureWidgetVisible(chip)
-            )
+            # Scroll to show new tag (safely)
+            self._scroll_chip_into_view_later(chip)
+    
+    def _scroll_chip_into_view_later(self, chip: 'TagChip'):
+        """Ensure chip is visible later, guarding against deleted objects."""
+        def _do_scroll():
+            try:
+                if Shiboken is not None:
+                    if not Shiboken.isValid(self.scroll_area):
+                        return
+                    if not Shiboken.isValid(chip):
+                        return
+                # Fallback basic checks
+                if self.scroll_area is None or chip is None:
+                    return
+                self.scroll_area.ensureWidgetVisible(chip)
+            except RuntimeError:
+                # Under teardown, Qt object may be deleted; ignore
+                pass
+        QTimer.singleShot(100, _do_scroll)
                 
     def get_tags(self) -> List[str]:
         """Get the current tags."""
@@ -382,6 +398,18 @@ class TagInputWidget(QWidget):
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.input_field.setCompleter(self.completer)
+
+    # Compatibility helpers used by tests expecting a line-edit-like API
+    def text(self) -> str:
+        """Return tags as a comma-separated string."""
+        return ", ".join(self._tags)
+
+    def setText(self, text: str):
+        """Set tags from a comma-separated string, trimming whitespace."""
+        parts = [t.strip() for t in (text or "").split(',')]
+        # Filter empty entries
+        tags = [p for p in parts if p]
+        self.set_tags(tags)
         
     def focusInEvent(self, event):
         """Handle focus in event."""

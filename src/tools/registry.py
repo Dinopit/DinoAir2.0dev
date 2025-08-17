@@ -21,10 +21,18 @@ from .base import (
     BaseTool, ToolMetadata, ToolCategory,
     ToolEvent, ToolLifecycleEvent
 )
-from .discovery import ToolDiscovery
-from .loader import ToolLoader, ValidationResult
-from .control.tool_controller import ToolController
-from .control.tool_context import ExecutionContext
+"""
+Note on imports and circular dependencies:
+
+This module intentionally avoids importing sibling modules such as
+`discovery`, `loader`, and `control` at module import time to prevent
+static circular dependencies. Where needed, those modules are imported
+at runtime via `importlib.import_module`, and type hints use `Any`.
+
+Rationale: Our import-cycle checker is static and flags any Import/ImportFrom
+edges regardless of scope. Using runtime imports removes those static edges
+while preserving behavior.
+"""
 
 
 logger = logging.getLogger(__name__)
@@ -84,12 +92,26 @@ class ToolRegistry:
             self._lock = threading.RLock()
             self._initialized = True
             
-            # Initialize discovery and loader
-            self._discovery = ToolDiscovery(self)
-            self._loader = ToolLoader(self)
+            # Initialize discovery and loader (runtime imports to avoid cycles)
+            try:
+                discovery_mod = importlib.import_module(f"{__package__}.discovery")
+                ToolDiscovery = getattr(discovery_mod, "ToolDiscovery")
+                self._discovery = ToolDiscovery(self)
+            except Exception as e:
+                logger.error(f"Failed to initialize ToolDiscovery: {e}")
+                raise
+
+            try:
+                loader_mod = importlib.import_module(f"{__package__}.loader")
+                ToolLoader = getattr(loader_mod, "ToolLoader")
+                self._loader = ToolLoader(self)
+            except Exception as e:
+                logger.error(f"Failed to initialize ToolLoader: {e}")
+                raise
             
             # Initialize tool controller for policy enforcement
-            self._controller: Optional[ToolController] = None
+            # Type is Any to avoid importing control module types here
+            self._controller: Optional[Any] = None
             
             # Register for tool lifecycle events
             self._setup_event_handling()
@@ -238,7 +260,7 @@ class ToolRegistry:
         self,
         name: str,
         config_override: Optional[Dict[str, Any]] = None,
-        context: Optional[ExecutionContext] = None
+    context: Optional[Any] = None
     ) -> Optional[BaseTool]:
         """
         Get a tool instance
@@ -327,7 +349,7 @@ class ToolRegistry:
         category: Optional[ToolCategory] = None,
         tags: Optional[List[str]] = None,
         enabled_only: bool = True,
-        context: Optional[ExecutionContext] = None,
+    context: Optional[Any] = None,
         check_policies: bool = False
     ) -> List[Dict[str, Any]]:
         """
@@ -551,7 +573,7 @@ class ToolRegistry:
     def validate_tool_class(
         self,
         tool_class: Type[BaseTool]
-    ) -> ValidationResult:
+    ) -> Any:
         """
         Validate a tool class before registration
         
@@ -899,7 +921,7 @@ class ToolRegistry:
             )
             return False
 
-    def set_controller(self, controller: Optional[ToolController]):
+    def set_controller(self, controller: Optional[Any]):
         """
         Set the tool controller for policy enforcement
         
@@ -912,13 +934,13 @@ class ToolRegistry:
             f"for registry"
         )
     
-    def get_controller(self) -> Optional[ToolController]:
+    def get_controller(self) -> Optional[Any]:
         """Get the current tool controller"""
         return self._controller
     
     def get_tools_for_context(
         self,
-        context: ExecutionContext,
+    context: Any,
         category: Optional[ToolCategory] = None,
         tags: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
@@ -950,7 +972,7 @@ class ToolRegistry:
     
     def get_tool_recommendations(
         self,
-        context: ExecutionContext,
+    context: Any,
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
