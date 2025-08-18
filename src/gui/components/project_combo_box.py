@@ -7,11 +7,10 @@ from typing import Optional, List, Dict
 from PySide6.QtWidgets import QComboBox, QWidget
 from PySide6.QtCore import Signal, QTimer
 
-from ...database.projects_db import ProjectsDatabase
-from ...database.initialize_db import DatabaseManager
-from ...models.project import Project, ProjectStatus
-from ...utils.logger import Logger
-from ...utils.colors import DinoPitColors
+from src.tools.projects_service import ProjectsService
+from src.models.project import Project, ProjectStatus
+from src.utils.logger import Logger
+from src.utils.colors import DinoPitColors
 
 
 class ProjectComboBox(QComboBox):
@@ -22,7 +21,8 @@ class ProjectComboBox(QComboBox):
     
     def __init__(self, parent: Optional[QWidget] = None, 
                  include_no_project: bool = True,
-                 filter_active_only: bool = True):
+                 filter_active_only: bool = True,
+                 projects_service: Optional[ProjectsService] = None):
         """Initialize the project combo box
         
         Args:
@@ -34,11 +34,10 @@ class ProjectComboBox(QComboBox):
         self.logger = Logger()
         self._include_no_project = include_no_project
         self._filter_active_only = filter_active_only
-        self._projects_cache: Dict[str, Project] = {}
-        
-        # Initialize database
-        db_manager = DatabaseManager()
-        self.projects_db = ProjectsDatabase(db_manager)
+        self._projects_cache = {}
+
+        # Injected service to decouple GUI from DB layer
+        self._projects_service = projects_service or ProjectsService()
         
         # Setup UI
         self._setup_ui()
@@ -113,15 +112,8 @@ class ProjectComboBox(QComboBox):
             if self._include_no_project:
                 self.addItem("(No Project)", None)
             
-            # Get all projects
-            all_projects = self.projects_db.get_all_projects()
-            
-            # Filter if needed
-            if self._filter_active_only:
-                projects = [p for p in all_projects
-                            if p.status == ProjectStatus.ACTIVE.value]
-            else:
-                projects = all_projects
+            # Get projects from service with filtering
+            projects = self._projects_service.get_projects(self._filter_active_only)
             
             # Build project hierarchy
             root_projects = [p for p in projects if not p.parent_project_id]

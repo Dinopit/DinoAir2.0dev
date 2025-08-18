@@ -8,7 +8,10 @@ import time
 import threading
 from pathlib import Path
 from datetime import datetime
-from ..models.note import Note, NoteList
+try:
+    from src.models.note import Note, NoteList
+except ImportError:
+    from models.note import Note, NoteList
 from .resilient_db import ResilientDB
 
 class DatabaseManager:

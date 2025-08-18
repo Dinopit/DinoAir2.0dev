@@ -4,7 +4,8 @@ Sidebar Component - Navigation sidebar
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 from PySide6.QtCore import Signal
-from ...utils.scaling import get_scaling_helper
+# Use absolute import to work with test path setup
+from src.utils.scaling import get_scaling_helper
 
 
 class Sidebar(QWidget):

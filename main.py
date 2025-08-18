@@ -17,7 +17,7 @@ from src.utils import ConfigLoader, Logger
 from src.utils.resource_manager import get_resource_manager, ResourceType
 from src.utils.dependency_container import get_container
 from src.utils.state_machine import get_state_machine, ApplicationState, transition_to_state
-from src.database import initialize_user_databases
+from src.database.initialize_db import initialize_user_databases
 from src.gui import MainWindow
 from src.tools.registry import ToolRegistry
 # Conditional tool imports for compatibility across branches

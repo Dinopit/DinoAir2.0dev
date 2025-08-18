@@ -21,16 +21,46 @@ from PySide6.QtGui import (
     QDragMoveEvent
 )
 
-from ...database.artifacts_db import ArtifactsDatabase
-from ...models.artifact import (
+try:
+    from src.database.artifacts_db import ArtifactsDatabase
+except ImportError:
+    from database.artifacts_db import ArtifactsDatabase
+# Test-friendly alias: expose ProjectsDatabase symbol for patching in tests
+try:
+    try:
+        from src.database.projects_db import ProjectsDatabase as _ProjectsDatabase
+    except ImportError:
+        from database.projects_db import ProjectsDatabase as _ProjectsDatabase
+except Exception:  # pragma: no cover - fallback for environments without DB
+    class _ProjectsDatabase:  # minimal placeholder to allow patching
+        pass
+
+# Re-export for tests expecting module attribute
+ProjectsDatabase = _ProjectsDatabase
+try:
+    from src.models.artifact import (
     Artifact, ArtifactType, ArtifactStatus, ArtifactCollection
-)
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.window_state import window_state_manager
+    )
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.window_state import window_state_manager
+except ImportError:
+    from models.artifact import (
+        Artifact, ArtifactType, ArtifactStatus, ArtifactCollection
+    )
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.window_state import window_state_manager
 from ..components.tag_input_widget import TagInputWidget
 from ..components.project_combo_box import ProjectComboBox
+try:
+    from src.tools.artifacts_service import ArtifactsService
+    from src.tools.projects_service import ProjectsService
+except ImportError:
+    from tools.artifacts_service import ArtifactsService
+    from tools.projects_service import ProjectsService
 
 
 class CollectionDialog(QDialog):
@@ -620,13 +650,28 @@ class ArtifactsPage(QWidget):
         self.logger = Logger()
         
         # Initialize database
-        from ...database.initialize_db import DatabaseManager
+        try:
+            from src.database.initialize_db import DatabaseManager
+        except ImportError:
+            from database.initialize_db import DatabaseManager
         db_manager = DatabaseManager()
         self.artifacts_db = ArtifactsDatabase(db_manager)
+        # Provide a service adapter for future use (keeps GUI thin)
+        try:
+            self.artifacts_service = ArtifactsService(db_manager=db_manager, artifacts_db=self.artifacts_db)
+        except Exception:
+            self.artifacts_service = None  # pragma: no cover
         
         # Initialize projects database for project info
-        from ...database.projects_db import ProjectsDatabase
+        try:
+            from src.database.projects_db import ProjectsDatabase
+        except ImportError:
+            from database.projects_db import ProjectsDatabase
         self.projects_db = ProjectsDatabase(db_manager)
+        try:
+            self.projects_service = ProjectsService(db_manager=db_manager)
+        except Exception:
+            self.projects_service = None  # pragma: no cover
         
         self._current_artifact: Optional[Artifact] = None
         self._current_collection: Optional[str] = None
@@ -1158,7 +1203,10 @@ class ArtifactsPage(QWidget):
     def _load_collections(self):
         """Load all collections"""
         try:
-            self._collections_cache = self.artifacts_db.get_collections()
+            if getattr(self, 'artifacts_service', None):
+                self._collections_cache = self.artifacts_service.get_collections()
+            else:
+                self._collections_cache = self.artifacts_db.get_collections()
             self._update_tree()
         except Exception as e:
             self.logger.error(f"Failed to load collections: {str(e)}")
@@ -1166,7 +1214,10 @@ class ArtifactsPage(QWidget):
     def _load_projects_cache(self):
         """Load project information for badges"""
         try:
-            projects = self.projects_db.get_all_projects()
+            if getattr(self, 'projects_service', None):
+                projects = self.projects_service.get_projects(filter_active_only=False)
+            else:
+                projects = self.projects_db.get_all_projects()
             self._projects_cache = {p.id: p for p in projects}
         except Exception as e:
             self.logger.error(f"Failed to load projects cache: {str(e)}")
@@ -1176,12 +1227,20 @@ class ArtifactsPage(QWidget):
         try:
             # Apply project filter if active
             if self._current_project_filter:
-                artifacts = self.artifacts_db.get_artifacts_by_project(
-                    self._current_project_filter
-                )
+                if getattr(self, 'artifacts_service', None):
+                    artifacts = self.artifacts_service.get_artifacts_by_project(
+                        self._current_project_filter
+                    )
+                else:
+                    artifacts = self.artifacts_db.get_artifacts_by_project(
+                        self._current_project_filter
+                    )
             else:
                 # For now, search with empty query to get all artifacts
-                artifacts = self.artifacts_db.search_artifacts("", limit=1000)
+                if getattr(self, 'artifacts_service', None):
+                    artifacts = self.artifacts_service.get_all_artifacts(limit=1000)
+                else:
+                    artifacts = self.artifacts_db.search_artifacts("", limit=1000)
             self._update_tree()
             self._update_stats()
         except Exception as e:
@@ -1214,11 +1273,19 @@ class ArtifactsPage(QWidget):
                 
         # Add artifacts to collections and all artifacts
         if self._current_project_filter:
-            artifacts = self.artifacts_db.get_artifacts_by_project(
-                self._current_project_filter
-            )
+            if getattr(self, 'artifacts_service', None):
+                artifacts = self.artifacts_service.get_artifacts_by_project(
+                    self._current_project_filter
+                )
+            else:
+                artifacts = self.artifacts_db.get_artifacts_by_project(
+                    self._current_project_filter
+                )
         else:
-            artifacts = self.artifacts_db.search_artifacts("", limit=1000)
+            if getattr(self, 'artifacts_service', None):
+                artifacts = self.artifacts_service.get_all_artifacts(limit=1000)
+            else:
+                artifacts = self.artifacts_db.search_artifacts("", limit=1000)
         
         for artifact in artifacts:
             # Create artifact item
@@ -1445,11 +1512,20 @@ class ArtifactsPage(QWidget):
                     return
                     
                 # Create artifact
-                result = self.artifacts_db.create_artifact(artifact, content_bytes)
+                if getattr(self, 'artifacts_service', None):
+                    result = self.artifacts_service.create_artifact(artifact, content_bytes)
+                else:
+                    result = self.artifacts_db.create_artifact(artifact, content_bytes)
                 
                 if result["success"]:
                     self.logger.info(f"Created new artifact: {artifact.id}")
                     
+                    # Invalidate service cache for immediate UI refresh
+                    if getattr(self, 'artifacts_service', None):
+                        try:
+                            self.artifacts_service.invalidate_cache()
+                        except Exception:
+                            pass
                     # Refresh displays
                     self._load_artifacts()
                     
@@ -1499,15 +1575,28 @@ class ArtifactsPage(QWidget):
                 for field in ['id', 'created_at', 'version']:
                     updates.pop(field, None)
                     
-                success = self.artifacts_db.update_artifact(
-                    updated_artifact.id,
-                    updates,
-                    content_bytes
-                )
+                if getattr(self, 'artifacts_service', None):
+                    success = self.artifacts_service.update_artifact(
+                        updated_artifact.id,
+                        updates,
+                        content_bytes
+                    )
+                else:
+                    success = self.artifacts_db.update_artifact(
+                        updated_artifact.id,
+                        updates,
+                        content_bytes
+                    )
                 
                 if success:
                     self.logger.info(f"Updated artifact: {updated_artifact.id}")
                     
+                    # Invalidate service cache for immediate UI refresh
+                    if getattr(self, 'artifacts_service', None):
+                        try:
+                            self.artifacts_service.invalidate_cache()
+                        except Exception:
+                            pass
                     # Refresh displays
                     self._load_artifacts()
                     self._show_artifact_details(updated_artifact)
@@ -1548,15 +1637,22 @@ class ArtifactsPage(QWidget):
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                success = self.artifacts_db.delete_artifact(
-                    self._current_artifact.id
-                )
+                if getattr(self, 'artifacts_service', None):
+                    success = self.artifacts_service.delete_artifact(self._current_artifact.id)
+                else:
+                    success = self.artifacts_db.delete_artifact(self._current_artifact.id)
                 
                 if success:
                     self.logger.info(
                         f"Deleted artifact: {self._current_artifact.id}"
                     )
                     
+                    # Invalidate service cache for immediate UI refresh
+                    if getattr(self, 'artifacts_service', None):
+                        try:
+                            self.artifacts_service.invalidate_cache()
+                        except Exception:
+                            pass
                     # Clear selection
                     self._current_artifact = None
                     self._clear_artifact_details()
@@ -1592,7 +1688,10 @@ class ArtifactsPage(QWidget):
                     return
                     
                 # Create collection
-                result = self.artifacts_db.create_collection(collection)
+                if getattr(self, 'artifacts_service', None):
+                    result = self.artifacts_service.create_collection(collection)
+                else:
+                    result = self.artifacts_db.create_collection(collection)
                 
                 if result["success"]:
                     self.logger.info(f"Created new collection: {collection.id}")
@@ -1818,6 +1917,11 @@ class ArtifactsPage(QWidget):
             
             if result.get("success"):
                 self.logger.info(f"Duplicated artifact: {new_artifact.id}")
+                if getattr(self, 'artifacts_service', None):
+                    try:
+                        self.artifacts_service.invalidate_cache()
+                    except Exception:
+                        pass
                 self._load_artifacts()
             else:
                 raise Exception(result.get("error", "Unknown error"))
@@ -1846,9 +1950,11 @@ class ArtifactsPage(QWidget):
                     'is_encrypted': updated_collection.is_encrypted
                 }
                 
-                success = self.artifacts_db.update_collection(
-                    collection.id, updates
-                )
+                # Route via service if available
+                if getattr(self, 'artifacts_service', None):
+                    success = self.artifacts_service.update_collection(collection.id, updates)
+                else:
+                    success = self.artifacts_db.update_collection(collection.id, updates)
                 
                 if success:
                     self.logger.info(f"Updated collection: {collection.id}")
@@ -1939,6 +2045,11 @@ class ArtifactsPage(QWidget):
                     self.logger.info(
                         f"Restored artifact to version {version.version_number}"
                     )
+                    if getattr(self, 'artifacts_service', None):
+                        try:
+                            self.artifacts_service.invalidate_cache()
+                        except Exception:
+                            pass
                     self._load_artifacts()
                     
                     # Refresh current artifact details

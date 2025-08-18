@@ -15,10 +15,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 
-from ...models.chat_session import ChatSession
-from ...database.chat_history_db import ChatHistoryDatabase
-from ...utils.colors import DinoPitColors
-from ...utils.scaling import get_scaling_helper
+from src.models.chat_session import ChatSession
+from src.database.chat_history_db import ChatHistoryDatabase
+from src.utils.colors import DinoPitColors
+from src.utils.scaling import get_scaling_helper
 from .loading_components import (
     TypingIndicator, MessageSendIndicator
 )

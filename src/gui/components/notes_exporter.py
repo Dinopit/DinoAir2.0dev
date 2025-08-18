@@ -15,10 +15,10 @@ from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtGui import QTextDocument, QPdfWriter, QPageSize
 from datetime import datetime as dt
 
-from ...models.note import Note
-from ...utils.logger import Logger
-from ...utils.colors import DinoPitColors
-from .notes_security import get_notes_security
+from src.models.note import Note
+from src.utils.logger import Logger
+from src.utils.colors import DinoPitColors
+from src.gui.components.notes_security import get_notes_security
 
 
 class NotesExporter(QObject):

@@ -5,6 +5,7 @@ Simple command-line health check for DinoAir components
 """
 
 import sys
+import logging
 import json
 import time
 from pathlib import Path
@@ -152,6 +153,9 @@ def main():
     args = parser.parse_args()
     
     try:
+        # Suppress logging noise in quiet mode to output only the status
+        if args.quiet:
+            logging.disable(logging.CRITICAL)
         results = check_basic_components()
         
         if args.json:

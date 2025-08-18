@@ -18,12 +18,20 @@ from PySide6.QtGui import (
     QAction, QKeySequence, QShortcut, QTextCharFormat, QColor
 )
 
-from ...database.appointments_db import AppointmentsDatabase
-from ...models.calendar_event import CalendarEvent, EventType, EventStatus
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.window_state import window_state_manager
+try:
+    from src.database.appointments_db import AppointmentsDatabase
+    from src.models.calendar_event import CalendarEvent, EventType, EventStatus
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.window_state import window_state_manager
+except ImportError:
+    from database.appointments_db import AppointmentsDatabase
+    from models.calendar_event import CalendarEvent, EventType, EventStatus
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.window_state import window_state_manager
 from ..components.tag_input_widget import TagInputWidget
 from ..components.project_combo_box import ProjectComboBox
 
@@ -530,7 +538,10 @@ class AppointmentsPage(QWidget):
         super().__init__()
         self.logger = Logger()
         # Initialize database
-        from ...database.initialize_db import DatabaseManager
+        try:
+            from src.database.initialize_db import DatabaseManager
+        except ImportError:
+            from database.initialize_db import DatabaseManager
         db_manager = DatabaseManager()
         self.appointments_db = AppointmentsDatabase(db_manager)
         self._current_event: Optional[CalendarEvent] = None

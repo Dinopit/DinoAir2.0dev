@@ -8,7 +8,10 @@ import shutil
 import time
 from pathlib import Path
 from datetime import datetime
-from ..models.note import Note, NoteList
+try:
+    from src.models.note import Note, NoteList
+except ImportError:
+    from models.note import Note, NoteList
 
 
 class ResilientDB:

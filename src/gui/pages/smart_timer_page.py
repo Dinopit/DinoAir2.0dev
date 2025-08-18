@@ -17,10 +17,16 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction
 
-from ...utils.colors import DinoPitColors
-from ...utils.logger import Logger
-from ...utils.scaling import get_scaling_helper
-from ...utils.smart_timer import SmartTimer, TimerManager
+try:
+    from src.utils.colors import DinoPitColors
+    from src.utils.logger import Logger
+    from src.utils.scaling import get_scaling_helper
+    from src.utils.smart_timer import SmartTimer, TimerManager
+except ImportError:  # Support when 'src' is sys.path root
+    from utils.colors import DinoPitColors
+    from utils.logger import Logger
+    from utils.scaling import get_scaling_helper
+    from utils.smart_timer import SmartTimer, TimerManager
 
 
 class SmartTimerPage(QWidget):

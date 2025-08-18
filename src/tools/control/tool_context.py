@@ -15,7 +15,9 @@ from ..base import BaseTool, ToolCategory
 
 if TYPE_CHECKING:
     from ..registry import ToolRegistry
-from .tool_controller import ToolController, ToolScore
+    from .tool_controller import ToolController, ToolScore
+else:
+    ToolScore = Any  # Fallback to avoid runtime NameError
 
 
 logger = logging.getLogger(__name__)
@@ -175,7 +177,7 @@ class ContextualToolSelector:
     
     def __init__(
         self,
-        controller: Optional[ToolController] = None,
+        controller: Optional['ToolController'] = None,
         registry: Optional['ToolRegistry'] = None
     ):
         """
@@ -185,10 +187,24 @@ class ContextualToolSelector:
             controller: Tool controller instance
             registry: Tool registry instance
         """
-        self.controller = controller or ToolController(registry)
+        # Avoid import cycle by importing at runtime if needed
+        if controller is None:
+            try:
+                from .tool_controller import ToolController as _ToolController
+                self.controller = _ToolController(registry)
+            except Exception as e:
+                logger.error(f"Failed to initialize ToolController: {e}")
+                raise
+        else:
+            self.controller = controller
+
         if registry is None:
-            from ..registry import ToolRegistry
-            registry = ToolRegistry()
+            try:
+                from ..registry import ToolRegistry as _ToolRegistry
+                registry = _ToolRegistry()
+            except Exception as e:
+                logger.error(f"Failed to initialize ToolRegistry: {e}")
+                raise
         self.registry = registry
         self._context_weights = {
             "user_preference": 0.25,

@@ -16,7 +16,11 @@ import time
 
 from ..models import CodeBlock, BlockType, ParseResult
 from ..parser import ParserModule
-from ..translator import TranslationManager
+"""
+Note on imports: to avoid circular imports with translator.py, we avoid
+importing TranslationManager at module import time. We import it lazily
+inside methods that need it.
+"""
 from ..assembler import CodeAssembler
 from ..validator import Validator
 from ..config import TranslatorConfig
@@ -70,8 +74,8 @@ class ChunkResult:
     """Result of processing a single chunk"""
     chunk_index: int
     success: bool
-    parsed_blocks: Optional[List[CodeBlock]] = None
-    translated_blocks: Optional[List[CodeBlock]] = None
+    parsed_blocks: Optional[List[Any]] = None
+    translated_blocks: Optional[List[Any]] = None
     error: Optional[str] = None
     warnings: List[str] = field(default_factory=list)
     processing_time: float = 0.0
@@ -153,22 +157,23 @@ class StreamingPipeline:
         Yields:
             ChunkResult objects as chunks are processed
         """
-        # Initialize translation manager for this stream
+        # Initialize translation manager for this stream (lazy import)
+        from ..translator import TranslationManager  # local import to avoid cycle
         self.translator = TranslationManager(self.config)
-        
+
         # Setup progress tracking
         if progress_callback:
             self.progress_callbacks.append(progress_callback)
-        
+
         # Start progress reporting thread
         self._start_progress_reporting()
-        
+
         try:
             # Chunk the code
             chunks = list(self.chunker.stream_chunks(code, filename))
             self.progress.total_chunks = len(chunks)
             self.progress.total_bytes = len(code.encode('utf-8'))
-            
+
             # Process chunks
             if self.stream_config.max_concurrent_chunks > 1:
                 # Parallel processing
@@ -176,7 +181,7 @@ class StreamingPipeline:
             else:
                 # Sequential processing
                 yield from self._process_chunks_sequential(chunks)
-                
+
         finally:
             # Cleanup
             self._stop_progress_reporting()
@@ -432,7 +437,7 @@ class StreamingPipeline:
         
         return context
     
-    def _update_context_window(self, chunk: CodeChunk, blocks: List[CodeBlock]):
+    def _update_context_window(self, chunk: CodeChunk, blocks: List[Any]):
         """
         Update the context window with processed blocks
         

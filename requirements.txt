@@ -26,6 +26,7 @@ faiss-cpu>=1.7.4
 python-dateutil>=2.8.0
 pathlib2>=2.3.0
 httpx>=0.25.0
+cryptography>=3.4.0
 
 # Development
 pytest>=7.0.0
@@ -37,3 +38,7 @@ flake8>=6.0.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 markdown>=3.5.0
+
+# RAG text extraction dependencies
+chardet>=5.2.0
+PyPDF2>=3.0.0

@@ -7,14 +7,14 @@ from datetime import datetime
 import re
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
-    QLabel, QHBoxLayout
+    QLabel, QHBoxLayout, QLineEdit
 )
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QFont
 
-from ...utils.colors import DinoPitColors
-from ...utils.scaling import get_scaling_helper
-from ...models.note import Note
+from src.utils.colors import DinoPitColors
+from src.utils.scaling import get_scaling_helper
+from src.models.note import Note
 
 
 class NoteListItem(QWidget):
@@ -202,47 +202,54 @@ class NoteListWidget(QWidget):
         """Setup the widget UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        
+        layout.setSpacing(self._scaling_helper.scaled_size(6))
+
+        # Simple search input for compatibility with tests
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search notes...")
+        self.search_input.textChanged.connect(self._on_search_text_changed)
+        layout.addWidget(self.search_input)
+
         # Create container for list and empty state
         self.container = QWidget()
         container_layout = QVBoxLayout(self.container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # Create the list widget
         self.list_widget = QListWidget()
         self._update_list_style(False)
-        
+
         # Create empty state widget
         self.empty_state = QWidget()
         empty_layout = QVBoxLayout(self.empty_state)
         empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self.empty_icon = QLabel("🔍")
         self.empty_icon.setStyleSheet("color: #FFFFFF;")
         self._update_empty_icon_style()
         self.empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self.empty_text = QLabel("No notes found")
         self.empty_text.setStyleSheet("color: #FFFFFF;")
         self._update_empty_text_style()
         self.empty_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         empty_layout.addStretch()
         empty_layout.addWidget(self.empty_icon)
         empty_layout.addWidget(self.empty_text)
         empty_layout.addStretch()
-        
+
         # Add widgets to container
         container_layout.addWidget(self.list_widget)
         container_layout.addWidget(self.empty_state)
-        
+
         # Initially hide empty state
         self.empty_state.hide()
-        
+
         # Connect signals
         self.list_widget.itemClicked.connect(self._on_item_clicked)
         self.list_widget.currentItemChanged.connect(self._on_current_changed)
-        
+
         layout.addWidget(self.container)
         
     def load_notes(self, notes: List[Note]):
@@ -278,11 +285,17 @@ class NoteListWidget(QWidget):
             )
             
             # Create list item
-            list_item = QListWidgetItem(self.list_widget)
+            list_item = QListWidgetItem()
+            list_item.setText(note.title or "")
             list_item.setSizeHint(
                 QSize(0, self._scaling_helper.scaled_size(80))
             )  # Scaled height
             list_item.setData(Qt.ItemDataRole.UserRole, note.id)
+            # Attach note object for tests expecting attribute
+            try:
+                list_item.note = note  # type: ignore[attr-defined]
+            except Exception:
+                pass
             
             # Set the custom widget
             self.list_widget.addItem(list_item)
@@ -307,6 +320,25 @@ class NoteListWidget(QWidget):
             
         # Reload notes
         self.load_notes(notes)
+
+    # --- Compatibility API expected by tests ---
+    def count(self) -> int:
+        return self.list_widget.count()
+
+    def item(self, index: int) -> QListWidgetItem:
+        return self.list_widget.item(index)
+
+    def clear(self):
+        self.list_widget.clear()
+        self._notes = []
+        self._filtered_notes = []
+        self._selected_note_id = None
+
+    def currentRow(self) -> int:
+        return self.list_widget.currentRow()
+
+    def setCurrentRow(self, row: int):
+        self.list_widget.setCurrentRow(row)
         
     def get_selected_note(self) -> Optional[Note]:
         """Get the currently selected note.
@@ -350,6 +382,9 @@ class NoteListWidget(QWidget):
     def _on_item_clicked(self, item: QListWidgetItem):
         """Handle item click."""
         note_id = item.data(Qt.ItemDataRole.UserRole)
+        # Avoid double-emitting for same selection
+        if self._selected_note_id == note_id:
+            return
         for note in self._notes:
             if note.id == note_id:
                 self._selected_note_id = note_id
@@ -382,6 +417,8 @@ class NoteListWidget(QWidget):
         
         # Reload display with filtered notes
         self.load_notes(self._notes)
+        # Also update visibility flags for compatibility with tests
+        self._apply_visibility_filter()
         
     def clear_filter(self):
         """Clear search filter and show all notes."""
@@ -392,6 +429,7 @@ class NoteListWidget(QWidget):
         
         # Reload display with all notes
         self.load_notes(self._notes)
+        self._apply_visibility_filter()
         
     def _update_list_style(self, search_mode: bool):
         """Update list widget style based on search mode."""
@@ -446,6 +484,36 @@ class NoteListWidget(QWidget):
     def is_search_mode(self) -> bool:
         """Check if currently in search mode."""
         return self._search_mode
+
+    def set_all_notes(self, notes: List[Note]):
+        """Compatibility setter used by tests for search scenario."""
+        self._notes = notes
+        self._apply_visibility_filter()
+
+    def _on_search_text_changed(self, text: str):
+        """Update filtered visibility based on search text."""
+        self._search_query = text or ""
+        self._search_mode = bool(self._search_query)
+        self._apply_visibility_filter()
+
+    def _apply_visibility_filter(self):
+        """Apply visibility to items inline, for tests reading isHidden()."""
+        query = (self._search_query or "").lower()
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            note_id = item.data(Qt.ItemDataRole.UserRole)
+            note = next((n for n in self._notes if n.id == note_id), None)
+            if not note:
+                item.setHidden(False)
+                continue
+            if not query:
+                item.setHidden(False)
+                continue
+            title = (note.title or "").lower()
+            content = (note.content or "").lower()
+            # Show if query in title or content
+            visible = (query in title) or (query in content)
+            item.setHidden(not visible)
     
     def _update_empty_icon_style(self):
         """Update empty icon style with current scaling."""

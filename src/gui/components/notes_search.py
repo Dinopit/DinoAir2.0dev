@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, QTimer
 
-from ...utils.colors import DinoPitColors
-from .notes_security import get_notes_security
+from src.utils.colors import DinoPitColors
+from src.gui.components.notes_security import get_notes_security
 
 
 class NotesSearchWidget(QWidget):
