@@ -17,7 +17,8 @@ Notes on Dependencies
 
 Clean Reset (nuclear)
 - Terminates Python, removes venvs, caches, logs, dbs, and user data:
-  - `taskkill /F /IM python.exe /T 2>$null; taskkill /F /IM py.exe /T 2>$null`
+  - PowerShell: `taskkill /F /IM python.exe /T 2>$null; taskkill /F /IM py.exe /T 2>$null`
+  - CMD: `taskkill /F /IM python.exe /T 2>nul & taskkill /F /IM py.exe /T 2>nul`
   - `if (Test-Path .\.venv) { cmd /c "rmdir /s /q .\.venv" }`
   - `Get-ChildItem -Recurse -Directory -Force | ? { $_.Name -in '__pycache__','.pytest_cache','.mypy_cache','.ruff_cache' } | rm -Recurse -Force`
   - `Get-ChildItem -Recurse -Force -Include *.pyc,*.pyo | rm -Force`
