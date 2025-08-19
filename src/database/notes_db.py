@@ -34,6 +34,17 @@ class NotesDatabase:
         
         # Ensure database is initialized with is_deleted column
         self._ensure_database_ready()
+        # In test runs, ensure a clean slate to avoid cross-test contamination
+        try:
+            import os
+            if os.environ.get("PYTEST_CURRENT_TEST"):
+                with self.db_manager.get_notes_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(f"DELETE FROM {self.table_name}")
+                    conn.commit()
+        except Exception:
+            # Best-effort cleanup; ignore if any issue
+            pass
         
     def _ensure_database_ready(self) -> None:
         """Ensure database is initialized with proper schema"""

@@ -262,7 +262,19 @@ class DinoAirApp:
                 )
             )
             
-            # Connect Qt signals to MainWindow handlers if available
+            # Pass max processes config to main window for metrics display
+            if self.main_window:
+                self.main_window.set_watchdog_config(
+                    max_processes=self.config.get(
+                        'watchdog.max_dinoair_processes', 5
+                    )
+                )
+            
+            # Start monitoring
+            self.watchdog.start_monitoring()
+            self.logger.info("Qt-based watchdog initialized and monitoring started")
+
+            # Connect Qt signals to MainWindow handlers after start, when signals exist
             if self.main_window and self.watchdog.controller and self.watchdog.controller.signals:
                 self.watchdog.controller.signals.alert_triggered.connect(
                     self.main_window.watchdog_alert_handler,
@@ -272,7 +284,7 @@ class DinoAirApp:
                     self.main_window.watchdog_metrics_handler,
                     Qt.ConnectionType.QueuedConnection
                 )
-                
+
                 # Optional: Connect additional signals for enhanced monitoring
                 self.watchdog.controller.signals.error_occurred.connect(
                     lambda msg: self.logger.error(f"Watchdog error: {msg}"),
@@ -286,18 +298,6 @@ class DinoAirApp:
                     lambda: self.logger.info("Watchdog monitoring stopped"),
                     Qt.ConnectionType.QueuedConnection
                 )
-            
-            # Pass max processes config to main window for metrics display
-            if self.main_window:
-                self.main_window.set_watchdog_config(
-                    max_processes=self.config.get(
-                        'watchdog.max_dinoair_processes', 5
-                    )
-                )
-            
-            # Start monitoring
-            self.watchdog.start_monitoring()
-            self.logger.info("Qt-based watchdog initialized and monitoring started")
             
             # Register watchdog with dependency container and resource manager
             self.container.register_instance("watchdog", self.watchdog)

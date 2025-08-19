@@ -6,6 +6,7 @@ import os
 import shutil
 import time
 import threading
+import tempfile
 from pathlib import Path
 from datetime import datetime
 try:
@@ -18,9 +19,29 @@ class DatabaseManager:
     """Manages multiple SQLite databases for the DinoAir application"""
     
     def __init__(self, user_name=None, user_feedback=None):
-        self.user_name = user_name or "default_user"
+        # Use a separate namespace for tests to avoid polluting real data
+        if user_name is None:
+            try:
+                if os.environ.get("PYTEST_CURRENT_TEST"):
+                    self.user_name = "test_user"
+                else:
+                    self.user_name = "default_user"
+            except Exception:
+                self.user_name = "default_user"
+        else:
+            self.user_name = user_name
         self.user_feedback = user_feedback or print
+        # Default base directory is project root
         self.base_dir = Path(__file__).parent.parent  # Root of DinoAir2.0dev
+        # During pytest runs, redirect to an isolated temp directory per process
+        try:
+            if os.environ.get("PYTEST_CURRENT_TEST"):
+                tmp_root = Path(tempfile.gettempdir()) / "DinoAirTests"
+                unique = f"run_{os.getpid()}_{int(time.time())}"
+                self.base_dir = tmp_root / unique
+        except Exception:
+            # Fallback silently if temp redirection fails
+            pass
         self.user_db_dir = self.base_dir / "user_data" / self.user_name / "databases"
         
         # Track active connections for cleanup
