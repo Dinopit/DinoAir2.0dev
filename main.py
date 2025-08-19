@@ -4,14 +4,13 @@ Modular note-taking application with AI capabilities
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import Qt
 
 from src.utils import ConfigLoader, Logger
 from src.utils.resource_manager import get_resource_manager, ResourceType
@@ -170,7 +169,7 @@ class DinoAirApp:
             self.app,
             ResourceType.GUI_COMPONENT,
             cleanup_func=lambda: self.app.quit(),
-            priority=10
+            priority=20
         )
         
     def initialize_database(self, user_name="default_user"):
@@ -262,7 +261,19 @@ class DinoAirApp:
                 )
             )
             
-            # Connect Qt signals to MainWindow handlers if available
+            # Pass max processes config to main window for metrics display
+            if self.main_window:
+                self.main_window.set_watchdog_config(
+                    max_processes=self.config.get(
+                        'watchdog.max_dinoair_processes', 5
+                    )
+                )
+            
+            # Start monitoring
+            self.watchdog.start_monitoring()
+            self.logger.info("Qt-based watchdog initialized and monitoring started")
+
+            # Connect Qt signals to MainWindow handlers after start, when signals exist
             if self.main_window and self.watchdog.controller and self.watchdog.controller.signals:
                 self.watchdog.controller.signals.alert_triggered.connect(
                     self.main_window.watchdog_alert_handler,
@@ -272,7 +283,7 @@ class DinoAirApp:
                     self.main_window.watchdog_metrics_handler,
                     Qt.ConnectionType.QueuedConnection
                 )
-                
+
                 # Optional: Connect additional signals for enhanced monitoring
                 self.watchdog.controller.signals.error_occurred.connect(
                     lambda msg: self.logger.error(f"Watchdog error: {msg}"),
@@ -287,18 +298,6 @@ class DinoAirApp:
                     Qt.ConnectionType.QueuedConnection
                 )
             
-            # Pass max processes config to main window for metrics display
-            if self.main_window:
-                self.main_window.set_watchdog_config(
-                    max_processes=self.config.get(
-                        'watchdog.max_dinoair_processes', 5
-                    )
-                )
-            
-            # Start monitoring
-            self.watchdog.start_monitoring()
-            self.logger.info("Qt-based watchdog initialized and monitoring started")
-            
             # Register watchdog with dependency container and resource manager
             self.container.register_instance("watchdog", self.watchdog)
             
@@ -307,7 +306,7 @@ class DinoAirApp:
                 self.watchdog,
                 ResourceType.WATCHDOG,
                 cleanup_func=self.watchdog.stop_monitoring,
-                priority=30
+                priority=5
             )
             
         except Exception as e:
@@ -339,7 +338,7 @@ class DinoAirApp:
                 self.main_window,
                 ResourceType.GUI_COMPONENT,
                 cleanup_func=self.main_window.close,
-                priority=15
+                priority=10
             )
             
             # Initialize watchdog after main window is created
