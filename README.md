@@ -24,7 +24,11 @@ Clean Reset (nuclear)
   - `Get-ChildItem -Recurse -Force -Include *.pyc,*.pyo | rm -Force`
   - `if (Test-Path .\logs) { rm -Recurse -Force .\logs }`
   - `Get-ChildItem -Recurse -Force -Include *.db,*.log | rm -Force`
-  - `if (Test-Path .\user_data) { rm -Recurse -Force .\user_data }`
+  - `Get-ChildItem -Recurse -Directory -Force | Where-Object { $_.Name -in '__pycache__','.pytest_cache','.mypy_cache','.ruff_cache' } | Remove-Item -Recurse -Force`
+  - `Get-ChildItem -Recurse -Force -Include *.pyc,*.pyo | Remove-Item -Force`
+  - `if (Test-Path .\logs) { Remove-Item -Recurse -Force .\logs }`
+  - `Get-ChildItem -Recurse -Force -Include *.db,*.log | Remove-Item -Force`
+  - `if (Test-Path .\user_data) { Remove-Item -Recurse -Force .\user_data }`
 
 Minimal Test Workflow
 - GUI quick tests (tasks available in VS Code):
